@@ -1,0 +1,35 @@
+{
+  "name": "nativescript-component",
+  "version": "0.0.1",
+  "description": "A module for easily creating reusable NativeScript components without Angular.",
+  "keywords": [
+    "NativeScript",
+    "component",
+    "reinstall-utils",
+    "core",
+    "Ember",
+    "UI"
+  ],
+  "repository": "https://github.com/BinaryNate/nativescript-core",
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "jshint src",
+    "build": "npm run lint && rm -rf dist && babel src --out-dir dist",
+    "reinstall-utils": "rm -rf node_modules/nativescript-utilities && npm install",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "jsdoc2md src/*.js > docs/api.md"
+  },
+  "author": "Nathan Hill",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-latest": "^6.16.0",
+    "jsdoc-to-markdown": "^2.0.1",
+    "jshint": "^2.9.4"
+  },
+  "dependencies": {
+    "nativescript-utilities": "^0.1.0",
+    "parameter-validator": "^1.0.0",
+    "tns-core-modules": "2.4.0"
+  }
+}
