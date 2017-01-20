@@ -1,6 +1,6 @@
 {
   "name": "nativescript-component",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A module for easily creating reusable NativeScript components without Angular.",
   "keywords": [
     "NativeScript",

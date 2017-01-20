@@ -22,7 +22,6 @@ as XML attributes or as `navigationContext` properties.
         * [.onShownModally(options)](#Component+onShownModally)
         * [.showModal(options)](#Component+showModal) ⇒ <code>Promise</code>
         * [.closeModal(err, data)](#Component+closeModal)
-        * [.init(options)](#Component+init)
     * _static_
         * [.isSingleton](#Component.isSingleton) : <code>boolean</code>
         * [.export(exports)](#Component.export)
@@ -110,9 +109,7 @@ Hook for the view's `navigatedTo` event.
 
 ### component.onLoaded(options)
 Hook for the view's `loaded` event which automatically sets the component's `view` property
-and binds any properties passed as XML attributes to the component's `bindingContext`. If the no
-properties are passed as XML attributes, then the `bindingContext` is not set, allowing the UI
-to instead use the parent component's `bindingContext`.
+and binds any properties passed as XML attributes to the component's `bindingContext`.
 
 **Kind**: instance method of <code>[Component](#Component)</code>  
 
@@ -143,7 +140,7 @@ component instance and sets its `closeModal` function.
 Launches the given modal on the current page, passing the modal page a Node-style callback to call.
 
 **Kind**: instance method of <code>[Component](#Component)</code>  
-**Returns**: <code>Promise</code> - - A promise containing the results passed back by the modal.  
+**Returns**: <code>Promise</code> - A promise containing the results passed back by the modal.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -170,20 +167,6 @@ expected by the code that showed the modal.
 | --- | --- | --- |
 | err | <code>Error</code> &#124; <code>string</code> &#124; <code>null</code> | The error if an error ocurred, or else `null`. |
 | data |  | The result, if there is one. |
-
-<a name="Component+init"></a>
-
-### component.init(options)
-A common initialization method invoked by the various lifecycle hooks (e.g. `onLoaded`, `onNavigatingTo`).
-
-**Kind**: instance method of <code>[Component](#Component)</code>  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| options | <code>Object</code> |  |
-| options.object | <code>ui/View</code> |  |
-| options.object.navigationContext |  |  |
-| options.object[* |  | Any properties passed as custom XML attributes. |
 
 <a name="Component.isSingleton"></a>
 

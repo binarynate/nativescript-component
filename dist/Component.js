@@ -103,9 +103,7 @@ var Component = function () {
 
         /**
         * Hook for the view's `loaded` event which automatically sets the component's `view` property
-        * and binds any properties passed as XML attributes to the component's `bindingContext`. If the no
-        * properties are passed as XML attributes, then the `bindingContext` is not set, allowing the UI
-        * to instead use the parent component's `bindingContext`.
+        * and binds any properties passed as XML attributes to the component's `bindingContext`.
         *
         * @param {Object}  options
         * @param {ui/View} options.object
@@ -147,7 +145,7 @@ var Component = function () {
         *                                               Page instance you which to display as the modal.
         * @param   {}            [options.context]    - Optional context to pass to to the modal view.
         * @param   {boolean}     [options.fullscreen] - Optionally specify whether the modal should appear full screen.
-        * @returns {Promise}     - A promise containing the results passed back by the modal.
+        * @returns {Promise}     A promise containing the results passed back by the modal.
         */
 
     }, {
@@ -208,7 +206,8 @@ var Component = function () {
         * @param {Object}  options
         * @param {ui/View} options.object
         * @param {}        options.object.navigationContext
-        * @param {}        options.object[*]                - Any properties passed as custom XML attributes.
+        * @param {}        options.object[x]                 - Any properties passed as custom XML attributes.
+        * @private
         */
 
     }, {

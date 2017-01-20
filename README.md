@@ -5,7 +5,7 @@ A simple way to create reusable NativeScript components *without* Angular.
 ## Benefits
 
 * **Simple API** for defining a component and binding properties to it.
-* **Multiple instances** of a single component can be used in a page.
+* __Multiple instances__ of a single component can be used in a page.
 * Each component instance is automatically given its own **separate state**.
 * ** Automatically binds** XML attributes to the component's binding context.
 * Automatically binds context properties passed to the component view `navigate()` and `showModal()`.
@@ -204,7 +204,7 @@ EditableText.export(exports);
 
 * Normally it's not necessary to set up bindings manually as shown here in `onLoaded`, but it's needed in this case in order to allow the `fieldName` property to dynamically specify the name of the property we're interested in.
 
-*For more information, check out the [API docs](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md).*
+**For more information, check out the [API docs](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md).**
 
 ## Contributing
 
