@@ -11,7 +11,7 @@
     "UI"
   ],
   "repository": "https://github.com/BinaryNate/nativescript-core",
-  "main": "src/Component.js",
+  "main": "dist/Component.js",
   "scripts": {
     "lint": "jshint src",
     "build": "npm run lint && rm -rf dist && babel src --out-dir dist",
@@ -22,6 +22,8 @@
   "author": "Nathan Hill",
   "license": "MIT",
   "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-node6": "^11.0.0",
     "jsdoc-to-markdown": "^2.0.1",
     "jshint": "^2.9.4"
   },
