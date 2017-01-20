@@ -4,6 +4,12 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 var _observable = require('data/observable');
 
 var _parameterValidator = require('parameter-validator');
@@ -18,274 +24,366 @@ var _ComponentManager2 = _interopRequireDefault(_ComponentManager);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 /**
 * Base class for authoring a vanilla NativeScript component using a friendly syntax.
 * This class introduces functionality like automatically providing a reference
 * to its view and automatically binding properties to the component that are passed in
 * as XML attributes or as `navigationContext` properties.
 */
-class Component {
-
-    /**
-    * Sets a property on the component's binding context.
-    *
-    * @param {string} name  - property name
-    * @param {}       value - property value
-    */
-    set(name, value) {
-        return this.bindingContext.set(name, value);
+var Component = function () {
+    function Component() {
+        _classCallCheck(this, Component);
     }
 
-    /**
-    * Gets a property from the component's binding context.
-    *
-    * @param   {string} name  - property name
-    * @returns {}
-    */
-    get(name) {
-        return this.bindingContext.get(name);
-    }
+    _createClass(Component, [{
+        key: 'set',
 
-    /**
-    * The component's view.
-    * @type {ui/View}
-    */
-    get view() {
 
-        if (this._view) {
-            return this._view;
-        }
-        throw new Error('Cannot get view, because it has not been set yet.');
-    }
-
-    /**
-    * The component's unique binding context.
-    *
-    * Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
-    * its own hasn't been set. However, in order to ensure that each Component instance has its own
-    * context (i.e. so that the context of a Component doesn't collide with that of its parent or
-    * siblings) this class automatically assigns the view its own unique `bindingContext`.
-    *
-    * @type {Observable}
-    */
-    get bindingContext() {
-
-        if (!(this.view.bindingContext && this._bindingContextSet)) {
-            this._view.bindingContext = new _observable.Observable();
-            this._bindingContextSet = true;
-        }
-        return this.view.bindingContext;
-    }
-
-    set bindingContext(context) {
-        this.view.bindingContext = context;
-    }
-
-    /**
-    * Contains any navigation context properties passed during the transition.
-    *
-    * @type {Object}
-    */
-    get navigationContext() {
-        return this.view.navigationContext;
-    }
-
-    /**
-    * Optional context provided if the component was shown modally.
-    *
-    * @type {}
-    */
-    get modalContext() {
-        return this._modalContext;
-    }
-
-    /**
-    * By default, multiple instances of the component can be created,
-    * and each instance is destroyed upon its view's `unloaded` event. To change this behavior so
-    * that only a single instance of your component is created and is kept alive throughout
-    * the lifetime of your application, override this property to be `true`.
-    *
-    * @type {boolean}
-    */
-    static get isSingleton() {
-        return false;
-    }
-
-    /**
-    * Hook for the view's `navigationTo` event which automatically sets the component's
-    * `view` property and automatically binds the `navigationContext` properties to the
-    * component instance.
-    *
-    * @param {Object}  options
-    * @param {ui/View} options.object
-    */
-    onNavigatingTo() /* options */{
-
-        this.init(...arguments);
-    }
-
-    /**
-    * Hook for the view's `navigatedTo` event.
-    *
-    * @param {Object}  options
-    * @param {ui/View} options.object
-    * @param {Object}  options.object.navigationContext
-    */
-    onNavigatedTo() /* options */{
-
-        this.init(...arguments);
-    }
-
-    /**
-    * Hook for the view's `loaded` event which automatically sets the component's `view` property
-    * and binds any properties passed as XML attributes to the component's `bindingContext`. If the no
-    * properties are passed as XML attributes, then the `bindingContext` is not set, allowing the UI
-    * to instead use the parent component's `bindingContext`.
-    *
-    * @param {Object}  options
-    * @param {ui/View} options.object
-    */
-    onLoaded() /* options */{
-
-        this.init(...arguments);
-    }
-
-    /**
-    * Hook for the view's `shownModally` event which automatically sets the component's
-    * `view` property, binds the `navigationContext` properties to the
-    * component instance and sets its `closeModal` function.
-    *
-    * @param {Object}   options
-    * @param {ui/View}  options.object
-    * @param {}         options.context       - Modal context
-    * @param {Function} options.closeCallback
-    */
-    onShownModally(options) {
-
-        this.init(...arguments);
-        this._modalContext = options.context;
-        this._closeModalCallback = options.closeCallback;
-        this._setNavigationContextProperties(this._modalContext);
-    }
-
-    /**
-    * Launches the given modal on the current page, passing the modal page a Node-style callback to call.
-    *
-    * @param   {Object}      options
-    * @param   {string|Page} options.modal        - The path, from the root of the project, to the modal view or the
-    *                                               Page instance you which to display as the modal.
-    * @param   {}            [options.context]    - Optional context to pass to to the modal view.
-    * @param   {boolean}     [options.fullscreen] - Optionally specify whether the modal should appear full screen.
-    * @returns {Promise}     - A promise containing the results passed back by the modal.
-    */
-    showModal(options) {
-
-        return (0, _parameterValidator.validateAsync)(options, ['modal']).then(() => {
-
-            let { modal, context, fullscreen } = options,
-                resolve,
-                reject,
-                currentPage = _frame2.default.topmost().currentPage;
-
-            let promise = new Promise((...args) => [resolve, reject] = args);
-            let callback = (err, ret) => err ? reject(err) : resolve(ret);
-
-            currentPage.showModal(modal, context, callback, fullscreen);
-            return promise;
-        });
-    }
-
-    /**
-    * If the component was shown modally, this method calls the callback that was provided to `showModal()`.
-    * If it was shown modally using this class's `showModal` method, the callback is a Node-style callback.
-    * If it was not shown modally using this class's `showModal` method, the parameters depend on what is
-    * expected by the code that showed the modal.
-    *
-    * @param  {Error|string|null} err  - The error if an error ocurred, or else `null`.
-    * @param  {}                  data - The result, if there is one.
-    *
-    * @throws {Error} - Throws an error if the component wasn't shown modally.
-    */
-    closeModal() {
-
-        if (this._closeModalCallback) {
-            return this._closeModalCallback(...arguments);
-        }
-        throw new Error(`No 'closeCallback' function has been set, probably because the component hasn't been shown modally`);
-    }
-
-    /**
-    * A common initialization method invoked by the various lifecycle hooks (e.g. `onLoaded`, `onNavigatingTo`).
-    *
-    * @param {Object}  options
-    * @param {ui/View} options.object
-    * @param {}        options.object.navigationContext
-    * @param {}        options.object[*]                - Any properties passed as custom XML attributes.
-    */
-    init(options) {
-
-        this._view = options.object;
-
-        // If any properties were passed as custom XML attributes, set those as properties within
-        // the binding context.
-        let params = this._getPropertiesPassedAsXmlAttributes(this._view);
-
-        for (let key in params) {
-            this.set(key, params[key]);
+        /**
+        * Sets a property on the component's binding context.
+        *
+        * @param {string} name  - property name
+        * @param {}       value - property value
+        */
+        value: function set(name, value) {
+            return this.bindingContext.set(name, value);
         }
 
-        this._setNavigationContextProperties(this._view.navigationContext);
-    }
+        /**
+        * Gets a property from the component's binding context.
+        *
+        * @param   {string} name  - property name
+        * @returns {}
+        */
 
-    /**
-    * Exports the component's public methods as named exports for a module. This should be called
-    * after the `Component` subclass is defined.
-    *
-    * @example
-    * class MyComponent extends Component {
-    *     // Extend component methods and use properties
-    * }
-    * MyComponent.export(exports);
-    *
-    * @param {Object} exports - The `exports` variable for the module from which the component's
-    *                           methods should be exported.
-    */
-    static export(moduleExports) {
+    }, {
+        key: 'get',
+        value: function get(name) {
+            return this.bindingContext.get(name);
+        }
 
-        let componentManager = new _ComponentManager2.default({ componentClass: this });
-        componentManager.export(moduleExports);
-    }
+        /**
+        * The component's view.
+        * @type {ui/View}
+        */
 
-    /**
-    * When parameters are passed to a component as XML attributes, they provided as
-    * properties on the container. This method picks out such properties by comparing
-    * the container to a new instance of the same class.
-    *
-    * @private
-    */
-    _getPropertiesPassedAsXmlAttributes(container) {
+    }, {
+        key: 'onNavigatingTo',
 
-        let exampleInstance = new container.constructor(),
-            parameters = {};
 
-        let shouldIgnoreKey = key => key === 'exports' || key.includes('xmlns');
+        /**
+        * Hook for the view's `navigationTo` event which automatically sets the component's
+        * `view` property and automatically binds the `navigationContext` properties to the
+        * component instance.
+        *
+        * @param {Object}  options
+        * @param {ui/View} options.object
+        */
+        value: function onNavigatingTo() /* options */{
 
-        for (let key of Object.getOwnPropertyNames(container)) {
-            if (exampleInstance[key] === undefined && key[0] !== '_' && !shouldIgnoreKey(key)) {
-                parameters[key] = container[key];
+            this.init.apply(this, arguments);
+        }
+
+        /**
+        * Hook for the view's `navigatedTo` event.
+        *
+        * @param {Object}  options
+        * @param {ui/View} options.object
+        * @param {Object}  options.object.navigationContext
+        */
+
+    }, {
+        key: 'onNavigatedTo',
+        value: function onNavigatedTo() /* options */{
+
+            this.init.apply(this, arguments);
+        }
+
+        /**
+        * Hook for the view's `loaded` event which automatically sets the component's `view` property
+        * and binds any properties passed as XML attributes to the component's `bindingContext`. If the no
+        * properties are passed as XML attributes, then the `bindingContext` is not set, allowing the UI
+        * to instead use the parent component's `bindingContext`.
+        *
+        * @param {Object}  options
+        * @param {ui/View} options.object
+        */
+
+    }, {
+        key: 'onLoaded',
+        value: function onLoaded() /* options */{
+
+            this.init.apply(this, arguments);
+        }
+
+        /**
+        * Hook for the view's `shownModally` event which automatically sets the component's
+        * `view` property, binds the `navigationContext` properties to the
+        * component instance and sets its `closeModal` function.
+        *
+        * @param {Object}   options
+        * @param {ui/View}  options.object
+        * @param {}         options.context       - Modal context
+        * @param {Function} options.closeCallback
+        */
+
+    }, {
+        key: 'onShownModally',
+        value: function onShownModally(options) {
+
+            this.init.apply(this, arguments);
+            this._modalContext = options.context;
+            this._closeModalCallback = options.closeCallback;
+            this._setNavigationContextProperties(this._modalContext);
+        }
+
+        /**
+        * Launches the given modal on the current page, passing the modal page a Node-style callback to call.
+        *
+        * @param   {Object}      options
+        * @param   {string|Page} options.modal        - The path, from the root of the project, to the modal view or the
+        *                                               Page instance you which to display as the modal.
+        * @param   {}            [options.context]    - Optional context to pass to to the modal view.
+        * @param   {boolean}     [options.fullscreen] - Optionally specify whether the modal should appear full screen.
+        * @returns {Promise}     - A promise containing the results passed back by the modal.
+        */
+
+    }, {
+        key: 'showModal',
+        value: function showModal(options) {
+
+            return (0, _parameterValidator.validateAsync)(options, ['modal']).then(function () {
+                var modal = options.modal,
+                    context = options.context,
+                    fullscreen = options.fullscreen,
+                    resolve = void 0,
+                    reject = void 0,
+                    currentPage = _frame2.default.topmost().currentPage;
+
+                var promise = new Promise(function () {
+                    var _args, _args2;
+
+                    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                        args[_key] = arguments[_key];
+                    }
+
+                    return _args = args, _args2 = _slicedToArray(_args, 2), resolve = _args2[0], reject = _args2[1], _args;
+                });
+                var callback = function callback(err, ret) {
+                    return err ? reject(err) : resolve(ret);
+                };
+
+                currentPage.showModal(modal, context, callback, fullscreen);
+                return promise;
+            });
+        }
+
+        /**
+        * If the component was shown modally, this method calls the callback that was provided to `showModal()`.
+        * If it was shown modally using this class's `showModal` method, the callback is a Node-style callback.
+        * If it was not shown modally using this class's `showModal` method, the parameters depend on what is
+        * expected by the code that showed the modal.
+        *
+        * @param  {Error|string|null} err  - The error if an error ocurred, or else `null`.
+        * @param  {}                  data - The result, if there is one.
+        *
+        * @throws {Error} - Throws an error if the component wasn't shown modally.
+        */
+
+    }, {
+        key: 'closeModal',
+        value: function closeModal() {
+
+            if (this._closeModalCallback) {
+                return this._closeModalCallback.apply(this, arguments);
+            }
+            throw new Error('No \'closeCallback\' function has been set, probably because the component hasn\'t been shown modally');
+        }
+
+        /**
+        * A common initialization method invoked by the various lifecycle hooks (e.g. `onLoaded`, `onNavigatingTo`).
+        *
+        * @param {Object}  options
+        * @param {ui/View} options.object
+        * @param {}        options.object.navigationContext
+        * @param {}        options.object[*]                - Any properties passed as custom XML attributes.
+        */
+
+    }, {
+        key: 'init',
+        value: function init(options) {
+
+            this._view = options.object;
+
+            // If any properties were passed as custom XML attributes, set those as properties within
+            // the binding context.
+            var params = this._getPropertiesPassedAsXmlAttributes(this._view);
+
+            for (var key in params) {
+                this.set(key, params[key]);
+            }
+
+            this._setNavigationContextProperties(this._view.navigationContext);
+        }
+
+        /**
+        * Exports the component's public methods as named exports for a module. This should be called
+        * after the `Component` subclass is defined.
+        *
+        * @example
+        * class MyComponent extends Component {
+        *     // Extend component methods and use properties
+        * }
+        * MyComponent.export(exports);
+        *
+        * @param {Object} exports - The `exports` variable for the module from which the component's
+        *                           methods should be exported.
+        */
+
+    }, {
+        key: '_getPropertiesPassedAsXmlAttributes',
+
+
+        /**
+        * When parameters are passed to a component as XML attributes, they provided as
+        * properties on the container. This method picks out such properties by comparing
+        * the container to a new instance of the same class.
+        *
+        * @private
+        */
+        value: function _getPropertiesPassedAsXmlAttributes(container) {
+
+            var exampleInstance = new container.constructor(),
+                parameters = {};
+
+            var shouldIgnoreKey = function shouldIgnoreKey(key) {
+                return key === 'exports' || key.includes('xmlns');
+            };
+
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = Object.getOwnPropertyNames(container)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var key = _step.value;
+
+                    if (exampleInstance[key] === undefined && key[0] !== '_' && !shouldIgnoreKey(key)) {
+                        parameters[key] = container[key];
+                    }
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+
+            return parameters;
+        }
+    }, {
+        key: '_setNavigationContextProperties',
+        value: function _setNavigationContextProperties(context) {
+
+            if ((typeof context === 'undefined' ? 'undefined' : _typeof(context)) === 'object') {
+                for (var key in context) {
+                    this.set(key, context[key]);
+                }
             }
         }
-        return parameters;
-    }
+    }, {
+        key: 'view',
+        get: function get() {
 
-    _setNavigationContextProperties(context) {
-
-        if (typeof context === 'object') {
-            for (let key in context) {
-                this.set(key, context[key]);
+            if (this._view) {
+                return this._view;
             }
+            throw new Error('Cannot get view, because it has not been set yet.');
         }
-    }
-}
+
+        /**
+        * The component's unique binding context.
+        *
+        * Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
+        * its own hasn't been set. However, in order to ensure that each Component instance has its own
+        * context (i.e. so that the context of a Component doesn't collide with that of its parent or
+        * siblings) this class automatically assigns the view its own unique `bindingContext`.
+        *
+        * @type {Observable}
+        */
+
+    }, {
+        key: 'bindingContext',
+        get: function get() {
+
+            if (!(this.view.bindingContext && this._bindingContextSet)) {
+                this._view.bindingContext = new _observable.Observable();
+                this._bindingContextSet = true;
+            }
+            return this.view.bindingContext;
+        },
+        set: function set(context) {
+            this.view.bindingContext = context;
+        }
+
+        /**
+        * Contains any navigation context properties passed during the transition.
+        *
+        * @type {Object}
+        */
+
+    }, {
+        key: 'navigationContext',
+        get: function get() {
+            return this.view.navigationContext;
+        }
+
+        /**
+        * Optional context provided if the component was shown modally.
+        *
+        * @type {}
+        */
+
+    }, {
+        key: 'modalContext',
+        get: function get() {
+            return this._modalContext;
+        }
+
+        /**
+        * By default, multiple instances of the component can be created,
+        * and each instance is destroyed upon its view's `unloaded` event. To change this behavior so
+        * that only a single instance of your component is created and is kept alive throughout
+        * the lifetime of your application, override this property to be `true`.
+        *
+        * @type {boolean}
+        */
+
+    }], [{
+        key: 'export',
+        value: function _export(moduleExports) {
+
+            var componentManager = new _ComponentManager2.default({ componentClass: this });
+            componentManager.export(moduleExports);
+        }
+    }, {
+        key: 'isSingleton',
+        get: function get() {
+            return false;
+        }
+    }]);
+
+    return Component;
+}();
 
 exports.default = Component;
