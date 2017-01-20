@@ -47,7 +47,8 @@ class Component {
     }
 
     /**
-    * @type {ui/View} - The component's view.
+    * The component's view.
+    * @type {ui/View}
     */
     get view() {
 
@@ -58,12 +59,14 @@ class Component {
     }
 
     /**
-    * @type {Observable} The component's unique binding context.
+    * The component's unique binding context.
     *
     * Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
     * its own hasn't been set. However, in order to ensure that each Component instance has its own
     * context (i.e. so that the context of a Component doesn't collide with that of its parent or
     * siblings) this class automatically assigns the view its own unique `bindingContext`.
+    *
+    * @type {Observable}
     */
     get bindingContext() {
 
@@ -79,24 +82,30 @@ class Component {
     }
 
     /**
-    * @type {Object} - Contains any navigation context properties passed during the transition.
+    * Contains any navigation context properties passed during the transition.
+    *
+    * @type {Object}
     */
     get navigationContext() {
         return this.view.navigationContext;
     }
 
     /**
-    * @type {} - Optional context provided if the component was shown modally.
+    * Optional context provided if the component was shown modally.
+    *
+    * @type {}
     */
     get modalContext() {
         return this._modalContext;
     }
 
     /**
-    * @type {boolean} - By default, multiple instances of the component can be created,
-    *                   and each instance is destroyed upon its view's `unloaded` event. To change this behavior so
-    *                   that only a single instance of your component is created and is kept alive throughout
-    *                   the lifetime of your application, override this property to be `true`.
+    * By default, multiple instances of the component can be created,
+    * and each instance is destroyed upon its view's `unloaded` event. To change this behavior so
+    * that only a single instance of your component is created and is kept alive throughout
+    * the lifetime of your application, override this property to be `true`.
+    *
+    * @type {boolean}
     */
     static get isSingleton() {
         return false;
@@ -167,7 +176,7 @@ class Component {
     *                                               Page instance you which to display as the modal.
     * @param   {}            [options.context]    - Optional context to pass to to the modal view.
     * @param   {boolean}     [options.fullscreen] - Optionally specify whether the modal should appear full screen.
-    * @returns {Promise.<>}  - A promise containing the results passed back by the modal.
+    * @returns {Promise}     - A promise containing the results passed back by the modal.
     */
     showModal(options) {
 
