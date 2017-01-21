@@ -1,16 +1,16 @@
 {
   "name": "nativescript-component",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A module for easily creating reusable NativeScript components without Angular.",
   "keywords": [
     "NativeScript",
     "component",
-    "reinstall-utils",
+    "reusable",
     "core",
     "Ember",
     "UI"
   ],
-  "repository": "https://github.com/BinaryNate/nativescript-core",
+  "repository": "https://github.com/BinaryNate/nativescript-component",
   "main": "dist/Component.js",
   "scripts": {
     "lint": "jshint src",
