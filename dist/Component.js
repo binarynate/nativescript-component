@@ -179,6 +179,34 @@ var Component = function () {
         }
 
         /**
+        * An alias for [`frame.topmost().navigate`](http://docs.nativescript.org/api-reference/classes/_ui_frame_.frame.html#navigate)
+        * which navigates to a specific Page.
+        *
+        * This method also adds support for an optional `component` parameter that can be specified
+        * when providing a [NavigationEntry](http://docs.nativescript.org/api-reference/interfaces/_ui_frame_.navigationentry.html)
+        * object to `navigate`. This simply makes it so that calling `navigate({ component: 'my-component', ... })` is automatically converted
+        * to `navigate({ moduleName: 'components/my-component/my-component', ... })`.
+        *
+        * @param {NavigationEntry} [entry]
+        * @param {string}          [entry.component] - The name of the component to transition to.
+        */
+
+    }, {
+        key: 'navigate',
+        value: function navigate() {
+            var _frame$topmost;
+
+            var arg = arguments[0];
+
+            if ((typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object' && typeof arg.component === 'string') {
+                var component = arg.component;
+
+                arg.moduleName = 'components/' + component + '/' + component;
+            }
+            return (_frame$topmost = _frame2.default.topmost()).navigate.apply(_frame$topmost, arguments);
+        }
+
+        /**
         * If the component was shown modally, this method calls the callback that was provided to `showModal()`.
         * If it was shown modally using this class's `showModal` method, the callback is a Node-style callback.
         * If it was not shown modally using this class's `showModal` method, the parameters depend on what is

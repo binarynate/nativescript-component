@@ -21,6 +21,7 @@ as XML attributes or as `navigationContext` properties.
         * [.onLoaded(options)](#Component+onLoaded)
         * [.onShownModally(options)](#Component+onShownModally)
         * [.showModal(options)](#Component+showModal) ⇒ <code>Promise</code>
+        * [.navigate([entry])](#Component+navigate)
         * [.closeModal(err, data)](#Component+closeModal)
     * _static_
         * [.isSingleton](#Component.isSingleton) : <code>boolean</code>
@@ -148,6 +149,24 @@ Launches the given modal on the current page, passing the modal page a Node-styl
 | options.modal | <code>string</code> &#124; <code>Page</code> | The path, from the root of the project, to the modal view or the                                               Page instance you which to display as the modal. |
 | [options.context] |  | Optional context to pass to to the modal view. |
 | [options.fullscreen] | <code>boolean</code> | Optionally specify whether the modal should appear full screen. |
+
+<a name="Component+navigate"></a>
+
+### component.navigate([entry])
+An alias for [`frame.topmost().navigate`](http://docs.nativescript.org/api-reference/classes/_ui_frame_.frame.html#navigate)
+which navigates to a specific Page.
+
+This method also adds support for an optional `component` parameter that can be specified
+when providing a [NavigationEntry](http://docs.nativescript.org/api-reference/interfaces/_ui_frame_.navigationentry.html)
+object to `navigate`. This simply makes it so that calling `navigate({ component: 'my-component', ... })` is automatically converted
+to `navigate({ moduleName: 'components/my-component/my-component', ... })`.
+
+**Kind**: instance method of <code>[Component](#Component)</code>  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [entry] | <code>NavigationEntry</code> |  |
+| [entry.component] | <code>string</code> | The name of the component to transition to. |
 
 <a name="Component+closeModal"></a>
 
