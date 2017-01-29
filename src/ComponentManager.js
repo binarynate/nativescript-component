@@ -208,7 +208,12 @@ class ComponentManager {
     */
     _getComponentForRootView(view) {
 
-        if (!(view.bindingContext && view.bindingContext.get('_componentId'))) {
+        try {
+            if (!view.bindingContext.get('_componentId')) {
+                return null;
+            }
+        } catch(error) {
+            // `view.bindingContext` is either undefined or is not an Observable.
             return null;
         }
 
