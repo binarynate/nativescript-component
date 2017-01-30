@@ -7,7 +7,7 @@ A simple way to create reusable NativeScript components *without* Angular.
 * **Simple API** for defining a component and binding properties to it.
 * __Multiple instances__ of a single component can be used in a page.
 * Each component instance is automatically given its own **separate state**.
-* ** Automatically binds** XML attributes to the component's binding context.
+* __Automatically binds__ XML attributes to the component's binding context.
 * Automatically binds context properties passed to the component view `navigate()` and `showModal()`.
 * A component instance is **automatically disposed** upon its view's `unloaded` event by default.
 * A component can instead be defined as a **singleton** so that a single instance is kept throughout the application's lifetime.
