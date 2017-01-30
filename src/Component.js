@@ -99,7 +99,9 @@ class Component {
     /**
     * Hook for the view's `navigationTo` event which automatically sets the component's
     * `view` property and automatically binds the `navigationContext` properties to the
-    * component instance. **Note that this hook can only be used for components whose
+    * component instance.
+    *
+    * **Note that this hook can only be used for components whose
     * root element is `Page`.**
     *
     * @param {Object}  options
@@ -111,7 +113,9 @@ class Component {
     }
 
     /**
-    * Hook for the view's `navigatedTo` event. **Note that this hook can only be used for components whose
+    * Hook for the view's `navigatedTo` event.
+    *
+    * **Note that this hook can only be used for components whose
     * root element is `Page`.**
     *
     * @param {Object}  options
@@ -128,7 +132,7 @@ class Component {
     * and binds any properties passed as XML attributes to the component's `bindingContext`.
     *
     * If your component's root element isn't `Page` (i.e. if it's embedded within another component),
-    * then you must specify either this hook or `onShownModally` in your template, because the `onNavigatedTo`
+    * then **you must specify either this hook or `onShownModally` in your template**, because the `onNavigatedTo`
     * and `onNavigatingTo` hooks are only called for `Page` components.
     *
     * @param {Object}  options
@@ -145,7 +149,7 @@ class Component {
     * component instance and sets its `closeModal` function.
     *
     * If your component's root element isn't `Page` (i.e. if it's embedded within another component),
-    * then you must specify either this hook or `onLoaded` in your template, because the `onNavigatedTo`
+    * then **you must specify either this hook or `onLoaded` in your template**, because the `onNavigatedTo`
     * and `onNavigatingTo` hooks are only called for `Page` components.
     *
     * @param {Object}   options
