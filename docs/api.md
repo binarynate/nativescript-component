@@ -84,7 +84,8 @@ Gets a property from the component's binding context.
 ### component.onNavigatingTo(options)
 Hook for the view's `navigationTo` event which automatically sets the component's
 `view` property and automatically binds the `navigationContext` properties to the
-component instance.
+component instance. **Note that this hook can only be used for components whose
+root element is `Page`.**
 
 **Kind**: instance method of <code>[Component](#Component)</code>  
 
@@ -96,7 +97,8 @@ component instance.
 <a name="Component+onNavigatedTo"></a>
 
 ### component.onNavigatedTo(options)
-Hook for the view's `navigatedTo` event.
+Hook for the view's `navigatedTo` event. **Note that this hook can only be used for components whose
+root element is `Page`.**
 
 **Kind**: instance method of <code>[Component](#Component)</code>  
 
@@ -112,6 +114,10 @@ Hook for the view's `navigatedTo` event.
 Hook for the view's `loaded` event which automatically sets the component's `view` property
 and binds any properties passed as XML attributes to the component's `bindingContext`.
 
+If your component's root element isn't `Page` (i.e. if it's embedded within another component),
+then you must specify either this hook or `onShownModally` in your template, because the `onNavigatedTo`
+and `onNavigatingTo` hooks are only called for `Page` components.
+
 **Kind**: instance method of <code>[Component](#Component)</code>  
 
 | Param | Type |
@@ -125,6 +131,10 @@ and binds any properties passed as XML attributes to the component's `bindingCon
 Hook for the view's `shownModally` event which automatically sets the component's
 `view` property, binds the `navigationContext` properties to the
 component instance and sets its `closeModal` function.
+
+If your component's root element isn't `Page` (i.e. if it's embedded within another component),
+then you must specify either this hook or `onLoaded` in your template, because the `onNavigatedTo`
+and `onNavigatingTo` hooks are only called for `Page` components.
 
 **Kind**: instance method of <code>[Component](#Component)</code>  
 
