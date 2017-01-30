@@ -74,7 +74,15 @@ class ComponentManager {
             let view = options.object;
 
             if (!view.bindingContext) {
-                throw new Error(`Cannot deallocate component for view, because view has no binding context.`);
+                this._error(`Cannot deallocate component for view, because view has no binding context.`);
+                return;
+            }
+
+            if (typeof view.bindingContext.get !== 'function') {
+                let message = `Cannot deallocate component for view, because the view's bindingContext is not an Observable. ` +
+                              `This can happen sometimes when running on Android, like when rendering a component inside a ListView.`;
+                this._warn(message);
+                return;
             }
 
             let componentId = view.bindingContext.get('_componentId');
@@ -82,7 +90,8 @@ class ComponentManager {
             let componentIndex = this._instances.findIndex(({ _id }) => _id === componentId);
 
             if (componentIndex === -1) {
-                throw new Error(`Cannot deallocate component for view, because no component matches the view's component ID of '${componentId}'`);
+                this._error(`Cannot deallocate component for view, because no component matches the view's component ID of '${componentId}'`);
+                return;
             }
 
             this._instances.splice(componentIndex, 1);
@@ -188,7 +197,8 @@ class ComponentManager {
                     let message = `Method '${methodName}' called for singleton component ${this.componentClass.name}, ` +
                                   `but the component has not been instantiated yet. Please ensure that one of the component's ` +
                                   `lifecycle hooks (e.g. onLoaded, onNavigatingTo) are hooked up in its template.`;
-                    throw new Error(message);
+                    this._error(message);
+                    return;
                 }
             } else {
                 component = this._getComponentForNestedView(view);
@@ -275,6 +285,18 @@ class ComponentManager {
         });
 
         return publicMethodNames;
+    }
+
+    _log(message) {
+        console.log(`nativescript-component: ${message}`);
+    }
+
+    _warn(message) {
+        this._log(`WARN: ${message}`);
+    }
+
+    _error(message) {
+        this._log(`ERROR: ${message}`);
     }
 }
 

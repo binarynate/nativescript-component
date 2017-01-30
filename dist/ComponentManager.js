@@ -118,7 +118,14 @@ var ComponentManager = function () {
                 var view = options.object;
 
                 if (!view.bindingContext) {
-                    throw new Error('Cannot deallocate component for view, because view has no binding context.');
+                    _this._error('Cannot deallocate component for view, because view has no binding context.');
+                    return;
+                }
+
+                if (typeof view.bindingContext.get !== 'function') {
+                    var message = 'Cannot deallocate component for view, because the view\'s bindingContext is not an Observable. ' + 'This can happen sometimes when running on Android, like when rendering a component inside a ListView.';
+                    _this._warn(message);
+                    return;
                 }
 
                 var componentId = view.bindingContext.get('_componentId');
@@ -129,7 +136,8 @@ var ComponentManager = function () {
                 });
 
                 if (componentIndex === -1) {
-                    throw new Error('Cannot deallocate component for view, because no component matches the view\'s component ID of \'' + componentId + '\'');
+                    _this._error('Cannot deallocate component for view, because no component matches the view\'s component ID of \'' + componentId + '\'');
+                    return;
                 }
 
                 _this._instances.splice(componentIndex, 1);
@@ -275,7 +283,8 @@ var ComponentManager = function () {
 
                     if (!component) {
                         var message = 'Method \'' + methodName + '\' called for singleton component ' + _this3.componentClass.name + ', ' + 'but the component has not been instantiated yet. Please ensure that one of the component\'s ' + 'lifecycle hooks (e.g. onLoaded, onNavigatingTo) are hooked up in its template.';
-                        throw new Error(message);
+                        _this3._error(message);
+                        return;
                     }
                 } else {
                     component = _this3._getComponentForNestedView(view);
@@ -384,6 +393,21 @@ var ComponentManager = function () {
             });
 
             return publicMethodNames;
+        }
+    }, {
+        key: '_log',
+        value: function _log(message) {
+            console.log('nativescript-component: ' + message);
+        }
+    }, {
+        key: '_warn',
+        value: function _warn(message) {
+            this._log('WARN: ' + message);
+        }
+    }, {
+        key: '_error',
+        value: function _error(message) {
+            this._log('ERROR: ' + message);
         }
     }]);
 
