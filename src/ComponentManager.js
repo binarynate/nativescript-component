@@ -78,15 +78,7 @@ class ComponentManager {
                 return;
             }
 
-            if (typeof view.bindingContext.get !== 'function') {
-                let message = `Cannot deallocate component for view, because the view's bindingContext is not an Observable. ` +
-                              `This can happen sometimes when running on Android, like when rendering a component inside a ListView.`;
-                this._warn(message);
-                return;
-            }
-
-            let componentId = view.bindingContext.get('_componentId');
-
+            let componentId = this._getComponentId(view.bindingContext);
             let componentIndex = this._instances.findIndex(({ _id }) => _id === componentId);
 
             if (componentIndex === -1) {
@@ -209,6 +201,26 @@ class ComponentManager {
     }
 
     /**
+    * Returns the value of a `bindingContext` object's property, regardless of whether
+    * the `bindingContext` is an Observable instance or a plain object.
+    *
+    * @private
+    */
+    _getBindingContextProperty(bindingContext, propertyName) {
+
+        if (typeof bindingContext.get === 'function') {
+            // bindingContext is observable, so use its `get` function.
+            return bindingContext.get(propertyName);
+        }
+        // bindingContext is not observable, so treat it like a plain object.
+        return bindingContext[propertyName];
+    }
+
+    _getComponentId(bindingContext) {
+        return this._getBindingContextProperty(bindingContext, '_componentId');
+    }
+
+    /**
     * Returns the component instance that matches the view's component ID or null
     * if the view has no component ID.
     *
@@ -218,16 +230,14 @@ class ComponentManager {
     */
     _getComponentForRootView(view) {
 
-        try {
-            if (!view.bindingContext.get('_componentId')) {
-                return null;
-            }
-        } catch(error) {
-            // `view.bindingContext` is either undefined or is not an Observable.
+        if (!view.bindingContext) {
             return null;
         }
+        let componentId = this._getComponentId(view.bindingContext);
 
-        let componentId = view.bindingContext.get('_componentId');
+        if (!componentId) {
+            return null;
+        }
         let component = this._instances.find(({ _id }) => _id === componentId);
         return component || null;
     }
@@ -248,9 +258,9 @@ class ComponentManager {
             throw new Error(`Couldn't locate the component containing the ${view.typeName} view, because the maximum number of iterations was reached.`);
         }
 
-        if (view.bindingContext && view.bindingContext.get('_componentId')) {
+        if (view.bindingContext && this._getComponentId(view.bindingContext)) {
             // We found the component's root view containing the component ID, so now we can find and return the right component.
-            let componentId = view.bindingContext.get('_componentId');
+            let componentId = this._getComponentId(view.bindingContext);
             let component = this._instances.find(({ _id }) => _id === componentId);
 
             if (component) {

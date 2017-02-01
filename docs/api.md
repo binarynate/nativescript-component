@@ -41,7 +41,8 @@ The component's unique binding context.
 Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
 its own hasn't been set. However, in order to ensure that each Component instance has its own
 context (i.e. so that the context of a Component doesn't collide with that of its parent or
-siblings) this class automatically assigns the view its own unique `bindingContext`.
+siblings) this class automatically assigns the view its own unique `bindingContext` if
+the bindingContext hasn't already been set.
 
 **Kind**: instance property of <code>[Component](#Component)</code>  
 <a name="Component+navigationContext"></a>

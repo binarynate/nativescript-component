@@ -18,7 +18,14 @@ class Component {
     * @param {}       value - property value
     */
     set(name, value) {
-        return this.bindingContext.set(name, value);
+
+        if (typeof this.bindingContext.set === 'function') {
+            // bindingContext is observable, so use its `set` function.
+            this.bindingContext.set(name, value);
+            return;
+        }
+        // bindingContext is not observable, so treat it like a plain object.
+        this.bindingContext[name] = value;
     }
 
     /**
@@ -28,7 +35,13 @@ class Component {
     * @returns {}
     */
     get(name) {
-        return this.bindingContext.get(name);
+
+        if (typeof this.bindingContext.get === 'function') {
+            // bindingContext is observable, so use its `get` function.
+            return this.bindingContext.get(name);
+        }
+        // bindingContext is not observable, so treat it like a plain object.
+        return this.bindingContext[name];
     }
 
     /**
@@ -49,15 +62,15 @@ class Component {
     * Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
     * its own hasn't been set. However, in order to ensure that each Component instance has its own
     * context (i.e. so that the context of a Component doesn't collide with that of its parent or
-    * siblings) this class automatically assigns the view its own unique `bindingContext`.
+    * siblings) this class automatically assigns the view its own unique `bindingContext` if
+    * the bindingContext hasn't already been set.
     *
     * @type {Observable}
     */
     get bindingContext() {
 
-        if (!(this.view.bindingContext && this._bindingContextSet)) {
+        if (!this.view.bindingContext) {
             this._view.bindingContext = new Observable();
-            this._bindingContextSet = true;
         }
         return this.view.bindingContext;
     }
