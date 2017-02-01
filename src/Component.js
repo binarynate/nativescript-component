@@ -62,16 +62,12 @@ class Component {
     * Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
     * its own hasn't been set. However, in order to ensure that each Component instance has its own
     * context (i.e. so that the context of a Component doesn't collide with that of its parent or
-    * siblings) this class automatically assigns the view its own unique `bindingContext` if
-    * the bindingContext hasn't already been set.
+    * siblings) component its own unique `bindingContext` if its bindingContext hasn't already been set.
     *
-    * @type {Observable}
+    * @type {Observable|Object}
     */
     get bindingContext() {
 
-        if (!this.view.bindingContext) {
-            this._view.bindingContext = new Observable();
-        }
         return this.view.bindingContext;
     }
 
@@ -261,15 +257,33 @@ class Component {
 
         this._view = options.object;
 
-        // If any properties were passed as custom XML attributes, set those as properties within
-        // the binding context.
-        let params = this._getPropertiesPassedAsXmlAttributes(this._view);
+        // First, get the names of all the properties passed as XML attributes in the template.f
+        let paramNames = this._getNamesOfPropertiesPassedAsXmlAttributes();
 
-        for (let key in params) {
-            this.set(key, params[key]);
+        let xmlParamsToApply = {};
+
+        // NativeScript sets properties on the view for every parameter passed as an XML attribute,
+        // however the parameters that are expressions (e.g. "{{ myBoundVariable }}") are empty objects
+        // on the view and are actually set on the original bindingContext (i.e. the parent's bindingContext).
+        // To handle that, for each of the properties passed as XML attributes, we first try to get the
+        // value from the original bindingContext and if it's not there, fall back to the value from the view object.
+        for (let paramName of paramNames) {
+            let valueFromOriginalBindingContext = this.get(paramName);
+            let valueFromView = this.view[paramName];
+            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromView;
         }
 
-        this._setNavigationContextProperties(this._view.navigationContext);
+        this._setNewBindingContextIfNeeded();
+
+        // Set all of the properties passed as XML attributes on the bindingContext, because a new bindingContext
+        // was probably applied, and even if the original bindingContext is still used, it won't contain the
+        // parameters that weren't expressions (e.g. myStaticValue="foo" as opposed to myDynamicValue="{{ myBoundVariable }}") .
+        for (let paramName in xmlParamsToApply) {
+            let value = xmlParamsToApply[paramName];
+            this.set(paramName, value);
+        }
+
+        this._setNavigationContextProperties(this.view.navigationContext);
     }
 
     /**
@@ -298,21 +312,34 @@ class Component {
     *
     * @private
     */
-    _getPropertiesPassedAsXmlAttributes(container) {
+    _getNamesOfPropertiesPassedAsXmlAttributes() {
 
-        let exampleInstance = new container.constructor(),
-            parameters = {};
+        let exampleInstance = new this.view.constructor(),
+            parameters = [];
 
         let shouldIgnoreKey = key => key === 'exports' || key.includes('xmlns');
 
-        for (let key of Object.getOwnPropertyNames(container)) {
+        for (let key of Object.getOwnPropertyNames(this.view)) {
             if (exampleInstance[key] === undefined && key[0] !== '_' && !shouldIgnoreKey(key)) {
-                parameters[key] = container[key];
+                parameters.push(key);
             }
         }
         return parameters;
     }
 
+    /**
+    * Assigns this component its own, new bindingContext if its bindingContext is
+    * undefined or has been inherited from its parent.
+    */
+    _setNewBindingContextIfNeeded() {
+
+        let parent = this.view._parent;
+        let parentBindingContext = parent ? parent.bindingContext : undefined;
+
+        if (this.view.bindingContext === parentBindingContext) {
+            this.view.bindingContext = new Observable();
+        }
+    }
 
     _setNavigationContextProperties(context) {
 

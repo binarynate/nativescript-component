@@ -271,15 +271,54 @@ var Component = function () {
 
             this._view = options.object;
 
-            // If any properties were passed as custom XML attributes, set those as properties within
-            // the binding context.
-            var params = this._getPropertiesPassedAsXmlAttributes(this._view);
+            // First, get the names of all the properties passed as XML attributes in the template.f
+            var paramNames = this._getNamesOfPropertiesPassedAsXmlAttributes();
 
-            for (var key in params) {
-                this.set(key, params[key]);
+            var xmlParamsToApply = {};
+
+            // NativeScript sets properties on the view for every parameter passed as an XML attribute,
+            // however the parameters that are expressions (e.g. "{{ myBoundVariable }}") are empty objects
+            // on the view and are actually set on the original bindingContext (i.e. the parent's bindingContext).
+            // To handle that, for each of the properties passed as XML attributes, we first try to get the
+            // value from the original bindingContext and if it's not there, fall back to the value from the view object.
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = paramNames[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var _paramName = _step.value;
+
+                    var valueFromOriginalBindingContext = this.get(_paramName);
+                    var valueFromView = this.view[_paramName];
+                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromView;
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
             }
 
-            this._setNavigationContextProperties(this._view.navigationContext);
+            this._setNewBindingContextIfNeeded();
+
+            // Set all of the properties passed as XML attributes on the bindingContext, because a new bindingContext
+            // was probably applied, and even if the original bindingContext is still used, it won't contain the
+            // parameters that weren't expressions (e.g. myStaticValue="foo" as opposed to myDynamicValue="{{ myBoundVariable }}") .
+            for (var paramName in xmlParamsToApply) {
+                var value = xmlParamsToApply[paramName];
+                this.set(paramName, value);
+            }
+
+            this._setNavigationContextProperties(this.view.navigationContext);
         }
 
         /**
@@ -297,7 +336,7 @@ var Component = function () {
         */
 
     }, {
-        key: '_getPropertiesPassedAsXmlAttributes',
+        key: '_getNamesOfPropertiesPassedAsXmlAttributes',
 
 
         /**
@@ -307,43 +346,60 @@ var Component = function () {
         *
         * @private
         */
-        value: function _getPropertiesPassedAsXmlAttributes(container) {
+        value: function _getNamesOfPropertiesPassedAsXmlAttributes() {
 
-            var exampleInstance = new container.constructor(),
-                parameters = {};
+            var exampleInstance = new this.view.constructor(),
+                parameters = [];
 
             var shouldIgnoreKey = function shouldIgnoreKey(key) {
                 return key === 'exports' || key.includes('xmlns');
             };
 
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
 
             try {
-                for (var _iterator = Object.getOwnPropertyNames(container)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var key = _step.value;
+                for (var _iterator2 = Object.getOwnPropertyNames(this.view)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var key = _step2.value;
 
                     if (exampleInstance[key] === undefined && key[0] !== '_' && !shouldIgnoreKey(key)) {
-                        parameters[key] = container[key];
+                        parameters.push(key);
                     }
                 }
             } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
                     }
                 } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
                     }
                 }
             }
 
             return parameters;
+        }
+
+        /**
+        * Assigns this component its own, new bindingContext if its bindingContext is
+        * undefined or has been inherited from its parent.
+        */
+
+    }, {
+        key: '_setNewBindingContextIfNeeded',
+        value: function _setNewBindingContextIfNeeded() {
+
+            var parent = this.view._parent;
+            var parentBindingContext = parent ? parent.bindingContext : undefined;
+
+            if (this.view.bindingContext === parentBindingContext) {
+                this.view.bindingContext = new _observable.Observable();
+            }
         }
     }, {
         key: '_setNavigationContextProperties',
@@ -371,19 +427,15 @@ var Component = function () {
         * Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
         * its own hasn't been set. However, in order to ensure that each Component instance has its own
         * context (i.e. so that the context of a Component doesn't collide with that of its parent or
-        * siblings) this class automatically assigns the view its own unique `bindingContext` if
-        * the bindingContext hasn't already been set.
+        * siblings) component its own unique `bindingContext` if its bindingContext hasn't already been set.
         *
-        * @type {Observable}
+        * @type {Observable|Object}
         */
 
     }, {
         key: 'bindingContext',
         get: function get() {
 
-            if (!this.view.bindingContext) {
-                this._view.bindingContext = new _observable.Observable();
-            }
             return this.view.bindingContext;
         },
         set: function set(context) {

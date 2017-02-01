@@ -279,7 +279,6 @@ class ComponentManager {
         throw new Error(`Couldn't locate the component containing the ${view.typeName} view; the root view was reached without encountering a component ID.`);
     }
 
-
     _getPublicMethodNames() {
 
         let instance = new this.componentClass();

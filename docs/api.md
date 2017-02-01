@@ -11,7 +11,7 @@ as XML attributes or as `navigationContext` properties.
 * [Component](#Component)
     * _instance_
         * [.view](#Component+view) : <code>ui/View</code>
-        * [.bindingContext](#Component+bindingContext) : <code>Observable</code>
+        * [.bindingContext](#Component+bindingContext) : <code>Observable</code> &#124; <code>Object</code>
         * [.navigationContext](#Component+navigationContext) : <code>Object</code>
         * [.modalContext](#Component+modalContext) : <code>Object</code>
         * [.set(name, value)](#Component+set)
@@ -23,6 +23,7 @@ as XML attributes or as `navigationContext` properties.
         * [.showModal(options)](#Component+showModal) ⇒ <code>Promise</code>
         * [.navigate([entry])](#Component+navigate)
         * [.closeModal(err, data)](#Component+closeModal)
+        * [._setNewBindingContextIfNeeded()](#Component+_setNewBindingContextIfNeeded)
     * _static_
         * [.isSingleton](#Component.isSingleton) : <code>boolean</code>
         * [.export(exports)](#Component.export)
@@ -35,14 +36,13 @@ The component's view.
 **Kind**: instance property of <code>[Component](#Component)</code>  
 <a name="Component+bindingContext"></a>
 
-### component.bindingContext : <code>Observable</code>
+### component.bindingContext : <code>Observable</code> &#124; <code>Object</code>
 The component's unique binding context.
 
 Normally, a NativeScript view implicitly inherits its parent view's `bindingContext` if
 its own hasn't been set. However, in order to ensure that each Component instance has its own
 context (i.e. so that the context of a Component doesn't collide with that of its parent or
-siblings) this class automatically assigns the view its own unique `bindingContext` if
-the bindingContext hasn't already been set.
+siblings) component its own unique `bindingContext` if its bindingContext hasn't already been set.
 
 **Kind**: instance property of <code>[Component](#Component)</code>  
 <a name="Component+navigationContext"></a>
@@ -202,6 +202,13 @@ expected by the code that showed the modal.
 | err | <code>Error</code> &#124; <code>string</code> &#124; <code>null</code> | The error if an error ocurred, or else `null`. |
 | data |  | The result, if there is one. |
 
+<a name="Component+_setNewBindingContextIfNeeded"></a>
+
+### component._setNewBindingContextIfNeeded()
+Assigns this component its own, new bindingContext if its bindingContext is
+undefined or has been inherited from its parent.
+
+**Kind**: instance method of <code>[Component](#Component)</code>  
 <a name="Component.isSingleton"></a>
 
 ### Component.isSingleton : <code>boolean</code>
