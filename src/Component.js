@@ -36,12 +36,7 @@ class Component {
     */
     get(name) {
 
-        if (typeof this.bindingContext.get === 'function') {
-            // bindingContext is observable, so use its `get` function.
-            return this.bindingContext.get(name);
-        }
-        // bindingContext is not observable, so treat it like a plain object.
-        return this.bindingContext[name];
+        return this._getBindingContextProperty(this.bindingContext, name);
     }
 
     /**
@@ -268,9 +263,15 @@ class Component {
         // To handle that, for each of the properties passed as XML attributes, we first try to get the
         // value from the original bindingContext and if it's not there, fall back to the value from the view object.
         for (let paramName of paramNames) {
-            let valueFromOriginalBindingContext = this.get(paramName);
-            let valueFromView = this.view[paramName];
-            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromView;
+            let valueFromOriginalBindingContext = this.get(paramName),
+                valueFromView = this.view[paramName],
+                valueFromParentBindingContext;
+            try {
+                let parentBindingContext = this.view._parent.bindingContext;
+                valueFromParentBindingContext = this._getBindingContextProperty(parentBindingContext, paramName);
+            } catch (error) {}
+
+            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
         }
 
         this._setNewBindingContextIfNeeded();
@@ -303,6 +304,22 @@ class Component {
 
         let componentManager = new ComponentManager({ componentClass: this });
         componentManager.export(moduleExports);
+    }
+
+    /**
+    * Returns the value of a `bindingContext` object's property, regardless of whether
+    * the `bindingContext` is an Observable instance or a plain object.
+    *
+    * @private
+    */
+    _getBindingContextProperty(bindingContext, propertyName) {
+
+        if (typeof bindingContext.get === 'function') {
+            // bindingContext is observable, so use its `get` function.
+            return bindingContext.get(propertyName);
+        }
+        // bindingContext is not observable, so treat it like a plain object.
+        return bindingContext[propertyName];
     }
 
     /**

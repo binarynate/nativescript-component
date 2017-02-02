@@ -69,12 +69,7 @@ var Component = function () {
         key: 'get',
         value: function get(name) {
 
-            if (typeof this.bindingContext.get === 'function') {
-                // bindingContext is observable, so use its `get` function.
-                return this.bindingContext.get(name);
-            }
-            // bindingContext is not observable, so treat it like a plain object.
-            return this.bindingContext[name];
+            return this._getBindingContextProperty(this.bindingContext, name);
         }
 
         /**
@@ -289,9 +284,15 @@ var Component = function () {
                 for (var _iterator = paramNames[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var _paramName = _step.value;
 
-                    var valueFromOriginalBindingContext = this.get(_paramName);
-                    var valueFromView = this.view[_paramName];
-                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromView;
+                    var valueFromOriginalBindingContext = this.get(_paramName),
+                        valueFromView = this.view[_paramName],
+                        valueFromParentBindingContext = void 0;
+                    try {
+                        var parentBindingContext = this.view._parent.bindingContext;
+                        valueFromParentBindingContext = this._getBindingContextProperty(parentBindingContext, _paramName);
+                    } catch (error) {}
+
+                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
                 }
             } catch (err) {
                 _didIteratorError = true;
@@ -336,8 +337,24 @@ var Component = function () {
         */
 
     }, {
-        key: '_getNamesOfPropertiesPassedAsXmlAttributes',
+        key: '_getBindingContextProperty',
 
+
+        /**
+        * Returns the value of a `bindingContext` object's property, regardless of whether
+        * the `bindingContext` is an Observable instance or a plain object.
+        *
+        * @private
+        */
+        value: function _getBindingContextProperty(bindingContext, propertyName) {
+
+            if (typeof bindingContext.get === 'function') {
+                // bindingContext is observable, so use its `get` function.
+                return bindingContext.get(propertyName);
+            }
+            // bindingContext is not observable, so treat it like a plain object.
+            return bindingContext[propertyName];
+        }
 
         /**
         * When parameters are passed to a component as XML attributes, they provided as
@@ -346,6 +363,9 @@ var Component = function () {
         *
         * @private
         */
+
+    }, {
+        key: '_getNamesOfPropertiesPassedAsXmlAttributes',
         value: function _getNamesOfPropertiesPassedAsXmlAttributes() {
 
             var exampleInstance = new this.view.constructor(),
