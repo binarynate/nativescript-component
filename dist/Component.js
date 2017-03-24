@@ -348,6 +348,11 @@ var Component = function () {
         */
         value: function _getBindingContextProperty(bindingContext, propertyName) {
 
+            if (bindingContext === undefined) {
+                var message = 'Component ' + this.constructor.name + ' has not been initialized via an initialization hook. ' + 'Please ensure that one of the component\'s initialization hooks (e.g. onLoaded) is hooked up in its XML template ' + 'and that if it overrides the base class\'s implementation of the hook, it still invokes base class\'s implementation.';
+                throw new Error(message);
+            }
+
             if (typeof bindingContext.get === 'function') {
                 // bindingContext is observable, so use its `get` function.
                 return bindingContext.get(propertyName);
