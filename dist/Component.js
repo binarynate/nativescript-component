@@ -49,6 +49,8 @@ var Component = function () {
         */
         value: function set(name, value) {
 
+            this._validateBindingContext();
+
             if (typeof this.bindingContext.set === 'function') {
                 // bindingContext is observable, so use its `set` function.
                 this.bindingContext.set(name, value);
@@ -68,7 +70,7 @@ var Component = function () {
     }, {
         key: 'get',
         value: function get(name) {
-
+            this._validateBindingContext();
             return this._getBindingContextProperty(this.bindingContext, name);
         }
 
@@ -356,11 +358,6 @@ var Component = function () {
         */
         value: function _getBindingContextProperty(bindingContext, propertyName) {
 
-            if (bindingContext === undefined) {
-                var message = 'Component ' + this.constructor.name + ' has not been initialized via an initialization hook. ' + 'Please ensure that one of the component\'s initialization hooks (e.g. onLoaded) is hooked up in its XML template ' + 'and that if it overrides the base class\'s implementation of the hook, it still invokes base class\'s implementation.';
-                throw new Error(message);
-            }
-
             if (typeof bindingContext.get === 'function') {
                 // bindingContext is observable, so use its `get` function.
                 return bindingContext.get(propertyName);
@@ -442,6 +439,15 @@ var Component = function () {
                 for (var key in context) {
                     this.set(key, context[key]);
                 }
+            }
+        }
+    }, {
+        key: '_validateBindingContext',
+        value: function _validateBindingContext() {
+
+            if (this.bindingContext === undefined) {
+                var message = 'Component ' + this.constructor.name + ' has not been initialized via an initialization hook. ' + 'Please ensure that one of the component\'s initialization hooks (e.g. onLoaded) is hooked up in its XML template ' + 'and that if it overrides the base class\'s implementation of the hook, it still invokes base class\'s implementation.';
+                throw new Error(message);
             }
         }
     }, {
