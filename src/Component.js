@@ -263,10 +263,18 @@ class Component {
         // To handle that, for each of the properties passed as XML attributes, we first try to get the
         // value from the original bindingContext and if it's not there, fall back to the value from the view object.
         for (let paramName of paramNames) {
-            let valueFromOriginalBindingContext = this.get(paramName),
-                valueFromView = this.view[paramName],
-                valueFromParentBindingContext;
+
+            let valueFromOriginalBindingContext,
+                valueFromParentBindingContext,
+                valueFromView = this.view[paramName];
+
             try {
+                // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
+                valueFromOriginalBindingContext = this.get(paramName);
+            } catch(error) {}
+
+            try {
+                // In a try / catch block, because the parent view's bindingContext could be undefined.
                 let parentBindingContext = this.view._parent.bindingContext;
                 valueFromParentBindingContext = this._getBindingContextProperty(parentBindingContext, paramName);
             } catch (error) {}

@@ -284,10 +284,18 @@ var Component = function () {
                 for (var _iterator = paramNames[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var _paramName = _step.value;
 
-                    var valueFromOriginalBindingContext = this.get(_paramName),
-                        valueFromView = this.view[_paramName],
-                        valueFromParentBindingContext = void 0;
+
+                    var valueFromOriginalBindingContext = void 0,
+                        valueFromParentBindingContext = void 0,
+                        valueFromView = this.view[_paramName];
+
                     try {
+                        // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
+                        valueFromOriginalBindingContext = this.get(_paramName);
+                    } catch (error) {}
+
+                    try {
+                        // In a try / catch block, because the parent view's bindingContext could be undefined.
                         var parentBindingContext = this.view._parent.bindingContext;
                         valueFromParentBindingContext = this._getBindingContextProperty(parentBindingContext, _paramName);
                     } catch (error) {}
