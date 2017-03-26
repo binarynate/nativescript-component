@@ -421,6 +421,21 @@ var Component = function () {
             }
 
             this.view.page.on('loaded', this._onPageLoaded.bind(this));
+
+            var page = this.view.page;
+
+
+            if (!page.onLoaded._patched) {
+                (function () {
+
+                    var originalPageOnLoaded = page.onLoaded.bind(page);
+
+                    page.onLoaded = function () {
+
+                        return originalPageOnLoaded.apply(undefined, arguments);
+                    };
+                })();
+            }
         }
     }, {
         key: '_callPageLoadedHook',
