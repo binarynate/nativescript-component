@@ -22,6 +22,8 @@ var _ComponentManager = require('./ComponentManager');
 
 var _ComponentManager2 = _interopRequireDefault(_ComponentManager);
 
+var _componentUtils = require('./component-utils');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -71,7 +73,7 @@ var Component = function () {
         key: 'get',
         value: function get(name) {
             this._validateBindingContext();
-            return this._getBindingContextProperty(this.bindingContext, name);
+            return (0, _componentUtils.getBindingContextProperty)(this.bindingContext, name);
         }
 
         /**
@@ -299,7 +301,7 @@ var Component = function () {
                     try {
                         // In a try / catch block, because the parent view's bindingContext could be undefined.
                         var parentBindingContext = this.view._parent.bindingContext;
-                        valueFromParentBindingContext = this._getBindingContextProperty(parentBindingContext, _paramName);
+                        valueFromParentBindingContext = (0, _componentUtils.getBindingContextProperty)(parentBindingContext, _paramName);
                     } catch (error) {}
 
                     xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
@@ -330,6 +332,7 @@ var Component = function () {
             }
 
             this._setNavigationContextProperties(this.view.navigationContext);
+            this._hookUpPageLoadedEvent();
         }
 
         /**
@@ -347,24 +350,8 @@ var Component = function () {
         */
 
     }, {
-        key: '_getBindingContextProperty',
+        key: '_getNamesOfPropertiesPassedAsXmlAttributes',
 
-
-        /**
-        * Returns the value of a `bindingContext` object's property, regardless of whether
-        * the `bindingContext` is an Observable instance or a plain object.
-        *
-        * @private
-        */
-        value: function _getBindingContextProperty(bindingContext, propertyName) {
-
-            if (typeof bindingContext.get === 'function') {
-                // bindingContext is observable, so use its `get` function.
-                return bindingContext.get(propertyName);
-            }
-            // bindingContext is not observable, so treat it like a plain object.
-            return bindingContext[propertyName];
-        }
 
         /**
         * When parameters are passed to a component as XML attributes, they provided as
@@ -373,9 +360,6 @@ var Component = function () {
         *
         * @private
         */
-
-    }, {
-        key: '_getNamesOfPropertiesPassedAsXmlAttributes',
         value: function _getNamesOfPropertiesPassedAsXmlAttributes() {
 
             var exampleInstance = new this.view.constructor(),
@@ -413,6 +397,92 @@ var Component = function () {
             }
 
             return parameters;
+        }
+
+        /**
+        * @param   {ui/View}        view
+        * @returns {Component|null}
+        * @private
+        */
+
+    }, {
+        key: '_getParentComponent',
+        value: function _getParentComponent() {
+
+            if (!this.view.parent) return null;
+            return (0, _componentUtils.getComponentForView)(this.view.parent);
+        }
+    }, {
+        key: '_hookUpPageLoadedEvent',
+        value: function _hookUpPageLoadedEvent() {
+
+            if (this.view.page === this.view && this.view.isLoaded) {
+                this._callPageLoadedHook();
+            }
+
+            this.view.page.on('loaded', this._onPageLoaded.bind(this));
+        }
+    }, {
+        key: '_callPageLoadedHook',
+        value: function _callPageLoadedHook() {
+
+            // `_wasCalled` is used by child components to determine when their hooks can be called.
+            this.onPageLoaded._wasCalled = true;
+            // `_returnValue` is used by child components so that if this component's hook returns a Promise,
+            // the child's hook isn't invoked until that Promise is resolved or rejected.
+            this.onPageLoaded._returnValue = this.onPageLoaded();
+            return this.onPageLoaded._returnValue;
+        }
+
+        /**
+        * Placeholder for a hook where subclasses can place their initialization code
+        */
+
+    }, {
+        key: 'onPageLoaded',
+        value: function onPageLoaded() {}
+    }, {
+        key: '_onPageLoaded',
+        value: function _onPageLoaded() {
+            var _this = this;
+
+            var parentComponent = this._getParentComponent();
+
+            if (!parentComponent) {
+                // This component is the outermost component, so go ahead and call the hook.
+                return this._callPageLoadedHook();
+            }
+
+            if (parentComponent.onPageLoaded._wasCalled) {
+                // The parent component's page loaded hook has already been called, so call this
+                // component's hook, waiting for the parent's component's promise to resolve if needed.
+                if (parentComponent.onPageLoaded._returnValue instanceof Promise) {
+                    return parentComponent.onPageLoaded._returnValue.catch(function () {}).then(function () {
+                        return _this._callPageLoadedHook();
+                    });
+                }
+                return this._callPageLoadedHook();
+            }
+
+            // The parent component's hook hasn't been called yet, so let's monkey patch it so that
+            // this component's hook is called after it, waiting for the parent's promise to resolve if needed.
+            var originalParentOnPageLoaded = parentComponent.onPageLoaded.bind(parentComponent);
+
+            parentComponent.onPageLoaded = function () {
+                var _this2 = this;
+
+                var returnValue = void 0;
+                try {
+                    returnValue = originalParentOnPageLoaded.apply(undefined, arguments);
+                } catch (error) {}
+
+                if (returnValue instanceof Promise) {
+                    return returnValue.catch(function () {}).then(function () {
+                        return _this2._callPageLoadedHook();
+                    });
+                }
+                return this._callPageLoadedHook();
+            };
         }
 
         /**

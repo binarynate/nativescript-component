@@ -4,13 +4,13 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _parameterValidator = require('parameter-validator');
 
 var _page = require('ui/page');
+
+var _componentUtils = require('./component-utils');
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -234,6 +234,8 @@ var ComponentManager = function () {
                     // component.set() before the initialization hook is invoked prevents variables
                     // passed as XML attributes from being bound correctly.
                     component.set('_componentId', component._id);
+                    // Set `_component` on the binding context so that the view has a reference to the component.
+                    component.set('_component', component);
                 }
                 return result;
             };
@@ -280,35 +282,14 @@ var ComponentManager = function () {
                         return;
                     }
                 } else {
-                    component = _this3._getComponentForNestedView(view);
+                    component = (0, _componentUtils.getComponentForView)(view);
+                    if (!component) {
+                        throw new Error('Couldn\'t locate the component containing the ' + view.typeName + ' view; the root view was reached without encountering a component.');
+                    }
                 }
                 // Proxy the function call to the matching component instance.
                 return (_component2 = component)[methodName].apply(_component2, args);
             };
-        }
-
-        /**
-        * Returns the value of a `bindingContext` object's property, regardless of whether
-        * the `bindingContext` is an Observable instance or a plain object.
-        *
-        * @private
-        */
-
-    }, {
-        key: '_getBindingContextProperty',
-        value: function _getBindingContextProperty(bindingContext, propertyName) {
-
-            if (typeof bindingContext.get === 'function') {
-                // bindingContext is observable, so use its `get` function.
-                return bindingContext.get(propertyName);
-            }
-            // bindingContext is not observable, so treat it like a plain object.
-            return bindingContext[propertyName];
-        }
-    }, {
-        key: '_getComponentId',
-        value: function _getComponentId(bindingContext) {
-            return this._getBindingContextProperty(bindingContext, '_componentId');
         }
 
         /**
@@ -338,58 +319,10 @@ var ComponentManager = function () {
             });
             return component || null;
         }
-
-        /**
-        * For the given view nested within a component, this method traverses the XML tree until it finds
-        * a view with a _componentId. That view is the component's root view, and the _componentId is used
-        * to look up and return the component.
-        *
-        * @param   {ui/View} view
-        * @returns {Component}
-        * @private
-        */
-
     }, {
-        key: '_getComponentForNestedView',
-        value: function _getComponentForNestedView(view) {
-            var _this4 = this;
-
-            var maxIterations = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 500;
-
-
-            if (maxIterations < 1) {
-                // This shouldn't ever happen, but is included in case to prevent infinite recursion.
-                throw new Error('Couldn\'t locate the component containing the ' + view.typeName + ' view, because the maximum number of iterations was reached.');
-            }
-
-            if (view.bindingContext && this._getComponentId(view.bindingContext)) {
-                var _ret = function () {
-                    // We found the component's root view containing the component ID, so now we can find and return the right component.
-                    var componentId = _this4._getComponentId(view.bindingContext);
-                    var component = _this4._instances.find(function (_ref3) {
-                        var _id = _ref3._id;
-                        return _id === componentId;
-                    });
-
-                    if (component) {
-                        return {
-                            v: component
-                        };
-                    }
-                    // This error would indicate that an event from a nested component bubbled up to and was handled by this component, which shouldn't happen.
-                    throw new Error('Couldn\'t locate the component containing the ' + view.typeName + ' view; a view with component ID \'' + componentId + '\' was found, but no component matches that ID');
-                }();
-
-                if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-            }
-
-            // There's no _componentId defined for this view, which is normal if the view is that of a tag
-            // embedded within a component. That's OK - let's just try its parent until we get to the component's root view.
-            if (view._parent) {
-                return this._getComponentForNestedView(view._parent, --maxIterations);
-            }
-            // This shouldn't ever happen, either.
-            throw new Error('Couldn\'t locate the component containing the ' + view.typeName + ' view; the root view was reached without encountering a component ID.');
+        key: '_getComponentId',
+        value: function _getComponentId(bindingContext) {
+            return (0, _componentUtils.getBindingContextProperty)(bindingContext, '_componentId');
         }
     }, {
         key: '_getPublicMethodNames',

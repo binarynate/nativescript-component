@@ -23,6 +23,7 @@ as XML attributes or as `navigationContext` properties.
         * [.showModal(options)](#Component+showModal) ⇒ <code>Promise</code>
         * [.navigate([entry])](#Component+navigate)
         * [.closeModal(err, data)](#Component+closeModal)
+        * [.onPageLoaded()](#Component+onPageLoaded)
         * [._setNewBindingContextIfNeeded()](#Component+_setNewBindingContextIfNeeded)
     * _static_
         * [.isSingleton](#Component.isSingleton) : <code>boolean</code>
@@ -202,6 +203,12 @@ expected by the code that showed the modal.
 | err | <code>Error</code> &#124; <code>string</code> &#124; <code>null</code> | The error if an error ocurred, or else `null`. |
 | data |  | The result, if there is one. |
 
+<a name="Component+onPageLoaded"></a>
+
+### component.onPageLoaded()
+Placeholder for a hook where subclasses can place their initialization code
+
+**Kind**: instance method of <code>[Component](#Component)</code>  
 <a name="Component+_setNewBindingContextIfNeeded"></a>
 
 ### component._setNewBindingContextIfNeeded()

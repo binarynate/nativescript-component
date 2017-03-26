@@ -1,5 +1,6 @@
 import { validate } from 'parameter-validator';
 import { Page } from 'ui/page';
+import { getComponentForView, getBindingContextProperty } from './component-utils';
 
 /**
 * The `Component` class defines the behavior for a single component instance, however the
@@ -155,6 +156,8 @@ class ComponentManager {
                 // component.set() before the initialization hook is invoked prevents variables
                 // passed as XML attributes from being bound correctly.
                 component.set('_componentId', component._id);
+                // Set `_component` on the binding context so that the view has a reference to the component.
+                component.set('_component', component);
             }
             return result;
         };
@@ -193,31 +196,14 @@ class ComponentManager {
                     return;
                 }
             } else {
-                component = this._getComponentForNestedView(view);
+                component = getComponentForView(view);
+                if (!component) {
+                    throw new Error(`Couldn't locate the component containing the ${view.typeName} view; the root view was reached without encountering a component.`);
+                }
             }
             // Proxy the function call to the matching component instance.
             return component[methodName](...args);
         };
-    }
-
-    /**
-    * Returns the value of a `bindingContext` object's property, regardless of whether
-    * the `bindingContext` is an Observable instance or a plain object.
-    *
-    * @private
-    */
-    _getBindingContextProperty(bindingContext, propertyName) {
-
-        if (typeof bindingContext.get === 'function') {
-            // bindingContext is observable, so use its `get` function.
-            return bindingContext.get(propertyName);
-        }
-        // bindingContext is not observable, so treat it like a plain object.
-        return bindingContext[propertyName];
-    }
-
-    _getComponentId(bindingContext) {
-        return this._getBindingContextProperty(bindingContext, '_componentId');
     }
 
     /**
@@ -242,41 +228,8 @@ class ComponentManager {
         return component || null;
     }
 
-    /**
-    * For the given view nested within a component, this method traverses the XML tree until it finds
-    * a view with a _componentId. That view is the component's root view, and the _componentId is used
-    * to look up and return the component.
-    *
-    * @param   {ui/View} view
-    * @returns {Component}
-    * @private
-    */
-    _getComponentForNestedView(view, maxIterations = 500) {
-
-        if (maxIterations < 1) {
-            // This shouldn't ever happen, but is included in case to prevent infinite recursion.
-            throw new Error(`Couldn't locate the component containing the ${view.typeName} view, because the maximum number of iterations was reached.`);
-        }
-
-        if (view.bindingContext && this._getComponentId(view.bindingContext)) {
-            // We found the component's root view containing the component ID, so now we can find and return the right component.
-            let componentId = this._getComponentId(view.bindingContext);
-            let component = this._instances.find(({ _id }) => _id === componentId);
-
-            if (component) {
-                return component;
-            }
-            // This error would indicate that an event from a nested component bubbled up to and was handled by this component, which shouldn't happen.
-            throw new Error(`Couldn't locate the component containing the ${view.typeName} view; a view with component ID '${componentId}' was found, but no component matches that ID`);
-        }
-
-        // There's no _componentId defined for this view, which is normal if the view is that of a tag
-        // embedded within a component. That's OK - let's just try its parent until we get to the component's root view.
-        if (view._parent) {
-            return this._getComponentForNestedView(view._parent, --maxIterations);
-        }
-        // This shouldn't ever happen, either.
-        throw new Error(`Couldn't locate the component containing the ${view.typeName} view; the root view was reached without encountering a component ID.`);
+    _getComponentId(bindingContext) {
+        return getBindingContextProperty(bindingContext, '_componentId');
     }
 
     _getPublicMethodNames() {
