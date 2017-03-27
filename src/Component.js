@@ -348,8 +348,8 @@ class Component {
     * @private
     */
     _getParentComponent() {
-
-        if (!this.view.parent) return null;
+        // When a view's parent is itself, it's the outermost view.
+        if (this.view.parent === this.view) return null;
         return getComponentForView(this.view.parent);
     }
 
@@ -360,20 +360,6 @@ class Component {
         }
 
         this.view.page.on('loaded', this._onPageLoaded.bind(this));
-
-        let { page } = this.view;
-
-        if (!page.onLoaded._patched) {
-
-            let originalPageOnLoaded = page.onLoaded.bind(page);
-
-            page.onLoaded = function(...args) {
-
-                return originalPageOnLoaded(...args);
-            };
-        }
-
-
     }
 
     _callPageLoadedHook() {
