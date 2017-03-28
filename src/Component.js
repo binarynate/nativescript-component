@@ -403,7 +403,7 @@ class Component {
         // this component's hook is called after it, waiting for the parent's promise to resolve if needed.
         let originalParentOnPageLoaded = parentComponent.onPageLoaded.bind(parentComponent);
 
-        parentComponent.onPageLoaded = function(...args) {
+        parentComponent.onPageLoaded = (...args) => {
 
             let returnValue;
             try {

@@ -469,7 +469,6 @@ var Component = function () {
             var originalParentOnPageLoaded = parentComponent.onPageLoaded.bind(parentComponent);
 
             parentComponent.onPageLoaded = function () {
-                var _this2 = this;
 
                 var returnValue = void 0;
                 try {
@@ -478,10 +477,10 @@ var Component = function () {
 
                 if (returnValue instanceof Promise) {
                     return returnValue.catch(function () {}).then(function () {
-                        return _this2._callPageLoadedHook();
+                        return _this._callPageLoadedHook();
                     });
                 }
-                return this._callPageLoadedHook();
+                return _this._callPageLoadedHook();
             };
         }
 
