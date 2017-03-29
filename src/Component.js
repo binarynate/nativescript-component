@@ -358,8 +358,9 @@ class Component {
         // value from the original bindingContext and if it's not there, fall back to the value from the view object.
         for (let paramName of paramNames) {
 
-            let valueFromOriginalBindingContext,
-                valueFromParentBindingContext,
+            let valueFromOriginalBindingContext,        // i.e. this.bindingContext[paramName]
+                valueFromParentViewBindingContext,      // i.e. this.view.bindingContext[paramName]
+                valueFromParentComponentBindingContext, // i.e. this.view.parent.parent...(getting to parent component)...parent.bindingContext[paramName]
                 valueFromView = this.view[paramName];
 
             try {
@@ -370,10 +371,14 @@ class Component {
             try {
                 // In a try / catch block, because the parent view's bindingContext could be undefined.
                 let parentBindingContext = this.view._parent.bindingContext;
-                valueFromParentBindingContext = getBindingContextProperty(parentBindingContext, paramName);
+                valueFromParentViewBindingContext = getBindingContextProperty(parentBindingContext, paramName);
             } catch (error) {}
 
-            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
+            try {
+                valueFromParentComponentBindingContext = this._getParentComponent().get(paramName);
+            } catch (error) {}
+
+            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromParentViewBindingContext || valueFromParentComponentBindingContext || valueFromView;
         }
 
         this._setNewBindingContextIfNeeded();

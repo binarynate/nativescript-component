@@ -410,8 +410,12 @@ var Component = function () {
 
 
                     var valueFromOriginalBindingContext = void 0,
-                        valueFromParentBindingContext = void 0,
-                        valueFromView = this.view[_paramName];
+                        // i.e. this.bindingContext[paramName]
+                    valueFromParentViewBindingContext = void 0,
+                        // i.e. this.view.bindingContext[paramName]
+                    valueFromParentComponentBindingContext = void 0,
+                        // i.e. this.view.parent.parent...(getting to parent component)...parent.bindingContext[paramName]
+                    valueFromView = this.view[_paramName];
 
                     try {
                         // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
@@ -421,10 +425,14 @@ var Component = function () {
                     try {
                         // In a try / catch block, because the parent view's bindingContext could be undefined.
                         var parentBindingContext = this.view._parent.bindingContext;
-                        valueFromParentBindingContext = (0, _componentUtils.getBindingContextProperty)(parentBindingContext, _paramName);
+                        valueFromParentViewBindingContext = (0, _componentUtils.getBindingContextProperty)(parentBindingContext, _paramName);
                     } catch (error) {}
 
-                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
+                    try {
+                        valueFromParentComponentBindingContext = this._getParentComponent().get(_paramName);
+                    } catch (error) {}
+
+                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentViewBindingContext || valueFromParentComponentBindingContext || valueFromView;
                 }
             } catch (err) {
                 _didIteratorError2 = true;
