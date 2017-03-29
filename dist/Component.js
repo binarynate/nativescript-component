@@ -150,7 +150,15 @@ var Component = function () {
 
     }, {
         key: 'onLoaded',
-        value: function onLoaded() /* options */{
+        value: function onLoaded(options) {
+
+            try {
+                if (options.object === options.object.page) {
+
+                    var scaryMessage = '\u26A0 WARNING: ' + this.constructor.name + ' was hooked up to a Page XML element using \'onLoaded\' instead of \'onNavigatingTo\', ' + 'which means that nested components will be initialized prior to the Page component. To ensure that the Page component is ' + 'initialized before its nested components, hook it up to the template using \'onNavigatingTo\' instead, and use \'onLoaded\' only for ' + 'components whose element is not Page (i.e. nested elements)';
+                    console.log(scaryMessage);
+                }
+            } catch (error) {}
 
             this._internalInit.apply(this, arguments);
         }
