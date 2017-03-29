@@ -16,6 +16,7 @@ as XML attributes or as `navigationContext` properties.
         * [.modalContext](#Component+modalContext) : <code>Object</code>
         * [.set(name, value)](#Component+set)
         * [.get(name)](#Component+get) ⇒
+        * [.init()](#Component+init)
         * [.onNavigatingTo(options)](#Component+onNavigatingTo)
         * [.onNavigatedTo(options)](#Component+onNavigatedTo)
         * [.onLoaded(options)](#Component+onLoaded)
@@ -23,7 +24,6 @@ as XML attributes or as `navigationContext` properties.
         * [.showModal(options)](#Component+showModal) ⇒ <code>Promise</code>
         * [.navigate([entry])](#Component+navigate)
         * [.closeModal(err, data)](#Component+closeModal)
-        * [.onPageLoaded()](#Component+onPageLoaded)
         * [._setNewBindingContextIfNeeded()](#Component+_setNewBindingContextIfNeeded)
     * _static_
         * [.isSingleton](#Component.isSingleton) : <code>boolean</code>
@@ -81,17 +81,32 @@ Gets a property from the component's binding context.
 | --- | --- | --- |
 | name | <code>string</code> | property name |
 
+<a name="Component+init"></a>
+
+### component.init()
+Override this hook to perform any initialization your component needs. Use `get()` to get
+properties that were passed to your component as XML attributes or via the navigation context.
+
+This hook is called after the parent component has been initialized and before child
+components have been initialized, so parents can safely pass values and dependencies to their
+children.
+
+**Kind**: instance method of <code>[Component](#Component)</code>  
 <a name="Component+onNavigatingTo"></a>
 
 ### component.onNavigatingTo(options)
-Hook for the view's `navigationTo` event which automatically sets the component's
-`view` property and automatically binds the `navigationContext` properties to the
-component instance.
+If the component's root element is `Page`, hook this method up to its XML template's `navigatingTo` event (i.e. `navigatingTo="onNavigatingTo"`)
+so that the component is instantiated when the view is loaded.
+
+**Kind**: instance method of <code>[Component](#Component)</code>  
+**See**
+
+- init           - The hook in which you place initialization code
+- onLoaded       - The hook that should be used instead of `onNavigatingTo` for components whose root element is not `Page`
 
 **Note that this hook can only be used for components whose
 root element is `Page`.**
 
-**Kind**: instance method of <code>[Component](#Component)</code>  
 
 | Param | Type |
 | --- | --- |
@@ -117,14 +132,16 @@ root element is `Page`.**
 <a name="Component+onLoaded"></a>
 
 ### component.onLoaded(options)
-Hook for the view's `loaded` event which automatically sets the component's `view` property
-and binds any properties passed as XML attributes to the component's `bindingContext`.
-
-If your component's root element isn't `Page` (i.e. if it's embedded within another component),
-then **you must specify either this hook or `onShownModally` in your template**, because the `onNavigatedTo`
-and `onNavigatingTo` hooks are only called for `Page` components.
+If the component's root element is not `Page`, hook this method up to its XML template's `loaded` event (i.e. `loaded="onLoaded"`)
+so that the component is instantiated when the view is loaded.
 
 **Kind**: instance method of <code>[Component](#Component)</code>  
+**See**
+
+- init           - The hook in which you place initialization code
+- onShownModally - Can be used instead of `onLoaded` if the component is presented via `showModal`
+- onNavigatingTo - The hook that should be used instead of `onLoaded` for components whose root element is `Page`
+
 
 | Param | Type |
 | --- | --- |
@@ -203,12 +220,6 @@ expected by the code that showed the modal.
 | err | <code>Error</code> &#124; <code>string</code> &#124; <code>null</code> | The error if an error ocurred, or else `null`. |
 | data |  | The result, if there is one. |
 
-<a name="Component+onPageLoaded"></a>
-
-### component.onPageLoaded()
-Placeholder for a hook where subclasses can place their initialization code
-
-**Kind**: instance method of <code>[Component](#Component)</code>  
 <a name="Component+_setNewBindingContextIfNeeded"></a>
 
 ### component._setNewBindingContextIfNeeded()

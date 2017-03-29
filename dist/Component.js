@@ -77,6 +77,21 @@ var Component = function () {
         }
 
         /**
+        * Override this hook to perform any initialization your component needs. Use `get()` to get
+        * properties that were passed to your component as XML attributes or via the navigation context.
+        *
+        * This hook is called after the parent component has been initialized and before child
+        * components have been initialized, so parents can safely pass values and dependencies to their
+        * children.
+        */
+
+    }, {
+        key: 'init',
+        value: function init() {}
+        // Userland
+
+
+        /**
         * The component's view.
         * @type {ui/View}
         */
@@ -86,9 +101,11 @@ var Component = function () {
 
 
         /**
-        * Hook for the view's `navigationTo` event which automatically sets the component's
-        * `view` property and automatically binds the `navigationContext` properties to the
-        * component instance.
+        * If the component's root element is `Page`, hook this method up to its XML template's `navigatingTo` event (i.e. `navigatingTo="onNavigatingTo"`)
+        * so that the component is instantiated when the view is loaded.
+        *
+        * @see init           - The hook in which you place initialization code
+        * @see onLoaded       - The hook that should be used instead of `onNavigatingTo` for components whose root element is not `Page`
         *
         * **Note that this hook can only be used for components whose
         * root element is `Page`.**
@@ -98,7 +115,7 @@ var Component = function () {
         */
         value: function onNavigatingTo() /* options */{
 
-            this.init.apply(this, arguments);
+            this._internalInit.apply(this, arguments);
         }
 
         /**
@@ -116,16 +133,16 @@ var Component = function () {
         key: 'onNavigatedTo',
         value: function onNavigatedTo() /* options */{
 
-            this.init.apply(this, arguments);
+            this._internalInit.apply(this, arguments);
         }
 
         /**
-        * Hook for the view's `loaded` event which automatically sets the component's `view` property
-        * and binds any properties passed as XML attributes to the component's `bindingContext`.
+        * If the component's root element is not `Page`, hook this method up to its XML template's `loaded` event (i.e. `loaded="onLoaded"`)
+        * so that the component is instantiated when the view is loaded.
         *
-        * If your component's root element isn't `Page` (i.e. if it's embedded within another component),
-        * then **you must specify either this hook or `onShownModally` in your template**, because the `onNavigatedTo`
-        * and `onNavigatingTo` hooks are only called for `Page` components.
+        * @see init           - The hook in which you place initialization code
+        * @see onShownModally - Can be used instead of `onLoaded` if the component is presented via `showModal`
+        * @see onNavigatingTo - The hook that should be used instead of `onLoaded` for components whose root element is `Page`
         *
         * @param {Object}  options
         * @param {ui/View} options.object
@@ -135,7 +152,7 @@ var Component = function () {
         key: 'onLoaded',
         value: function onLoaded() /* options */{
 
-            this.init.apply(this, arguments);
+            this._internalInit.apply(this, arguments);
         }
 
         /**
@@ -157,7 +174,7 @@ var Component = function () {
         key: 'onShownModally',
         value: function onShownModally(options) {
 
-            this.init.apply(this, arguments);
+            this._internalInit.apply(this, arguments);
             this._modalContext = options.context;
             this._closeModalCallback = options.closeCallback;
             this._setNavigationContextProperties(this._modalContext);
@@ -255,87 +272,6 @@ var Component = function () {
         }
 
         /**
-        * A common initialization method invoked by the various lifecycle hooks (e.g. `onLoaded`, `onNavigatingTo`).
-        *
-        * @param {Object}  options
-        * @param {ui/View} options.object
-        * @param {}        options.object.navigationContext
-        * @param {}        options.object[x]                 - Any properties passed as custom XML attributes.
-        * @private
-        */
-
-    }, {
-        key: 'init',
-        value: function init(options) {
-
-            this._view = options.object;
-
-            // First, get the names of all the properties passed as XML attributes in the template.f
-            var paramNames = this._getNamesOfPropertiesPassedAsXmlAttributes();
-
-            var xmlParamsToApply = {};
-
-            // NativeScript sets properties on the view for every parameter passed as an XML attribute,
-            // however the parameters that are expressions (e.g. "{{ myBoundVariable }}") are empty objects
-            // on the view and are actually set on the original bindingContext (i.e. the parent's bindingContext).
-            // To handle that, for each of the properties passed as XML attributes, we first try to get the
-            // value from the original bindingContext and if it's not there, fall back to the value from the view object.
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = paramNames[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var _paramName = _step.value;
-
-
-                    var valueFromOriginalBindingContext = void 0,
-                        valueFromParentBindingContext = void 0,
-                        valueFromView = this.view[_paramName];
-
-                    try {
-                        // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
-                        valueFromOriginalBindingContext = this.get(_paramName);
-                    } catch (error) {}
-
-                    try {
-                        // In a try / catch block, because the parent view's bindingContext could be undefined.
-                        var parentBindingContext = this.view._parent.bindingContext;
-                        valueFromParentBindingContext = (0, _componentUtils.getBindingContextProperty)(parentBindingContext, _paramName);
-                    } catch (error) {}
-
-                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
-                }
-            }
-
-            this._setNewBindingContextIfNeeded();
-
-            // Set all of the properties passed as XML attributes on the bindingContext, because a new bindingContext
-            // was probably applied, and even if the original bindingContext is still used, it won't contain the
-            // parameters that weren't expressions (e.g. myStaticValue="foo" as opposed to myDynamicValue="{{ myBoundVariable }}") .
-            for (var paramName in xmlParamsToApply) {
-                var value = xmlParamsToApply[paramName];
-                this.set(paramName, value);
-            }
-
-            this._setNavigationContextProperties(this.view.navigationContext);
-            this._hookUpPageLoadedEvent();
-        }
-
-        /**
         * Exports the component's public methods as named exports for a module. This should be called
         * after the `Component` subclass is defined.
         *
@@ -369,29 +305,29 @@ var Component = function () {
                 return key === 'exports' || key.includes('xmlns');
             };
 
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
 
             try {
-                for (var _iterator2 = Object.getOwnPropertyNames(this.view)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var key = _step2.value;
+                for (var _iterator = Object.getOwnPropertyNames(this.view)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var key = _step.value;
 
                     if (exampleInstance[key] === undefined && key[0] !== '_' && !shouldIgnoreKey(key)) {
                         parameters.push(key);
                     }
                 }
             } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
+                _didIteratorError = true;
+                _iteratorError = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                        _iterator2.return();
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
                     }
                 } finally {
-                    if (_didIteratorError2) {
-                        throw _iteratorError2;
+                    if (_didIteratorError) {
+                        throw _iteratorError;
                     }
                 }
             }
@@ -412,35 +348,139 @@ var Component = function () {
             if (this.view.parent === this.view) return null;
             return (0, _componentUtils.getComponentForView)(this.view.parent);
         }
+
+        /**
+        * Hooks up a listener for the Page's loaded event. The listener is used to ensure
+        * that the outer components' `init` methods are called before those of the inner components.
+        * @private
+        */
+
     }, {
         key: '_hookUpPageLoadedEvent',
         value: function _hookUpPageLoadedEvent() {
 
             if (this.view.page === this.view && this.view.isLoaded) {
-                this._callPageLoadedHook();
+                this._callPublicInitHook();
             }
 
             this.view.page.on('loaded', this._onPageLoaded.bind(this));
         }
-    }, {
-        key: '_callPageLoadedHook',
-        value: function _callPageLoadedHook() {
-
-            // `_wasCalled` is used by child components to determine when their hooks can be called.
-            this.onPageLoaded._wasCalled = true;
-            // `_returnValue` is used by child components so that if this component's hook returns a Promise,
-            // the child's hook isn't invoked until that Promise is resolved or rejected.
-            this.onPageLoaded._returnValue = this.onPageLoaded();
-            return this.onPageLoaded._returnValue;
-        }
 
         /**
-        * Placeholder for a hook where subclasses can place their initialization code
+        * A common internal initialization method invoked by the various lifecycle hooks (e.g. `onLoaded`, `onNavigatingTo`) to initialize the instance.
+        *
+        * @param {Object}  options
+        * @param {ui/View} options.object
+        * @param {}        options.object.navigationContext
+        * @param {}        options.object[x]                 - Any properties passed as custom XML attributes.
+        * @private
         */
 
     }, {
-        key: 'onPageLoaded',
-        value: function onPageLoaded() {}
+        key: '_internalInit',
+        value: function _internalInit(options) {
+
+            this._view = options.object;
+
+            // First, get the names of all the properties passed as XML attributes in the template.f
+            var paramNames = this._getNamesOfPropertiesPassedAsXmlAttributes();
+
+            var xmlParamsToApply = {};
+
+            // NativeScript sets properties on the view for every parameter passed as an XML attribute,
+            // however the parameters that are expressions (e.g. "{{ myBoundVariable }}") are empty objects
+            // on the view and are actually set on the original bindingContext (i.e. the parent's bindingContext).
+            // To handle that, for each of the properties passed as XML attributes, we first try to get the
+            // value from the original bindingContext and if it's not there, fall back to the value from the view object.
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = paramNames[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var _paramName = _step2.value;
+
+
+                    var valueFromOriginalBindingContext = void 0,
+                        valueFromParentBindingContext = void 0,
+                        valueFromView = this.view[_paramName];
+
+                    try {
+                        // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
+                        valueFromOriginalBindingContext = this.get(_paramName);
+                    } catch (error) {}
+
+                    try {
+                        // In a try / catch block, because the parent view's bindingContext could be undefined.
+                        var parentBindingContext = this.view._parent.bindingContext;
+                        valueFromParentBindingContext = (0, _componentUtils.getBindingContextProperty)(parentBindingContext, _paramName);
+                    } catch (error) {}
+
+                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentBindingContext || valueFromView;
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
+            }
+
+            this._setNewBindingContextIfNeeded();
+
+            // Set all of the properties passed as XML attributes on the bindingContext, because a new bindingContext
+            // was probably applied, and even if the original bindingContext is still used, it won't contain the
+            // parameters that weren't expressions (e.g. myStaticValue="foo" as opposed to myDynamicValue="{{ myBoundVariable }}") .
+            for (var paramName in xmlParamsToApply) {
+                var value = xmlParamsToApply[paramName];
+                this.set(paramName, value);
+            }
+
+            this._setNavigationContextProperties(this.view.navigationContext);
+            this._hookUpPageLoadedEvent();
+        }
+
+        /**
+        * Invokes the public `init` hook and sets properties which help ensure that the `init` is called for outer components
+        * before it's called for nested components.
+        * @private
+        */
+
+    }, {
+        key: '_callPublicInitHook',
+        value: function _callPublicInitHook() {
+
+            // `_wasCalled` is used by child components to determine when their hooks can be called.
+            this.init._wasCalled = true;
+            // `_returnValue` is used by child components so that if this component's hook returns a Promise,
+            // the child's hook isn't invoked until that Promise is resolved or rejected.
+            this.init._returnValue = this.init();
+            return this.init._returnValue;
+        }
+
+        /**
+        * Callback invoked on the Page's loaded event, which does most of the work to ensure that outer
+        * components' `init` methods are called before `init` is called for their nested components (and
+        * the nested components of those components, and so on). This is *opposite* of the order in which
+        * components' `onLoaded` events are naturally called (i.e. inside-out).
+        *
+        * One strange quirk of Page components is that listeners for the Page's onLoaded event are called
+        * *before* the component's own `onLoaded` hook is called. Due to this, the outside-in `init` flow
+        * only works when using the `onNavigatingTo` hook to hook up top-level Page components; if `onLoaded`
+        * is used to hook up an outer Page component, the Page component's `init` hook will be called *after*
+        * `init` is called for the nested components. Therefore, a warning is logged ot the console if
+        * `onLoaded` is used to hook up a Page component.
+        *
+        * @private
+        */
+
     }, {
         key: '_onPageLoaded',
         value: function _onPageLoaded() {
@@ -450,37 +490,37 @@ var Component = function () {
 
             if (!parentComponent) {
                 // This component is the outermost component, so go ahead and call the hook.
-                return this._callPageLoadedHook();
+                return this._callPublicInitHook();
             }
 
-            if (parentComponent.onPageLoaded._wasCalled) {
+            if (parentComponent.init._wasCalled) {
                 // The parent component's page loaded hook has already been called, so call this
                 // component's hook, waiting for the parent's component's promise to resolve if needed.
-                if (parentComponent.onPageLoaded._returnValue instanceof Promise) {
-                    return parentComponent.onPageLoaded._returnValue.catch(function () {}).then(function () {
-                        return _this._callPageLoadedHook();
+                if (parentComponent.init._returnValue instanceof Promise) {
+                    return parentComponent.init._returnValue.catch(function () {}).then(function () {
+                        return _this._callPublicInitHook();
                     });
                 }
-                return this._callPageLoadedHook();
+                return this._callPublicInitHook();
             }
 
             // The parent component's hook hasn't been called yet, so let's monkey patch it so that
             // this component's hook is called after it, waiting for the parent's promise to resolve if needed.
-            var originalParentOnPageLoaded = parentComponent.onPageLoaded.bind(parentComponent);
+            var originalParentInitFunction = parentComponent.init.bind(parentComponent);
 
-            parentComponent.onPageLoaded = function () {
+            parentComponent.init = function () {
 
                 var returnValue = void 0;
                 try {
-                    returnValue = originalParentOnPageLoaded.apply(undefined, arguments);
+                    returnValue = originalParentInitFunction.apply(undefined, arguments);
                 } catch (error) {}
 
                 if (returnValue instanceof Promise) {
                     return returnValue.catch(function () {}).then(function () {
-                        return _this._callPageLoadedHook();
+                        return _this._callPublicInitHook();
                     });
                 }
-                return _this._callPageLoadedHook();
+                return _this._callPublicInitHook();
             };
         }
 
