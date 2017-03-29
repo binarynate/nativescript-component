@@ -8,6 +8,7 @@ A simple way to create reusable NativeScript components *without* Angular.
 * __Multiple instances__ of a single component can be used in a page.
 * Each component instance is automatically given its own __separate state__.
 * __Automatically binds__ XML attributes to the component's binding context.
+* Parent components are initialized before their children, so parents can safely pass values and dependencies to their children.
 * Automatically binds context properties passed to the component view `navigate()` and `showModal()`.
 * A component instance is __automatically disposed__ upon its view's `unloaded` event by default.
 * A component can instead be defined as a __singleton__ so that a single instance is kept throughout the application's lifetime.
@@ -98,14 +99,13 @@ import Component from 'nativescript-component';
 class DetailsPage extends Component {
 
     /**
-    * Extends the Component class's built-in `onNavigatingTo()` hook in order
-    * to initialize the `controls` property.
+    * Place initialization code in `init`, which is automatically called
+    * after the parent is initialized and before child components are initialized.
     *
     * @override
     */
-    onNavigatingTo() {
+    init() {
 
-        super.onNavigatingTo(...arguments);
         this.set('controls', new Observable({ edit: false }));
     }
 
@@ -164,16 +164,13 @@ import Component from 'nativescript-component';
 class EditableText extends Component {
 
     /**
-    * Extends the `onLoaded` handler to set up the two-way binding for the data record's specified property.
-    * This must be done in JavaScript, because NativeScript's XML binding expressions don't currently support dynamic
-    * property names.
-    *
     * @override
     */
-    onLoaded(options) {
+    init() {
 
-        super.onLoaded(...arguments);
-
+        // Set up the two-way binding for the data record's specified property.
+        // This must be done in JavaScript, because NativeScript's XML binding expressions don't currently support dynamic
+        // property names.
         let label = this.view.getViewById('label'),
             input = this.view.getViewById('input'),
             record = this.get('record'),
