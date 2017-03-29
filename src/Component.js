@@ -302,7 +302,6 @@ class Component {
 
             let valueFromOriginalBindingContext,        // i.e. this.bindingContext[paramName]
                 valueFromParentViewBindingContext,      // i.e. this.view.bindingContext[paramName]
-                valueFromParentComponentBindingContext, // i.e. this.view.parent.parent...(getting to parent component)...parent.bindingContext[paramName]
                 valueFromView = this.view[paramName];
 
             try {
@@ -316,11 +315,12 @@ class Component {
                 valueFromParentViewBindingContext = getBindingContextProperty(parentBindingContext, paramName);
             } catch (error) {}
 
-            try {
-                valueFromParentComponentBindingContext = this._getParentComponent().get(paramName);
-            } catch (error) {}
+            let valueFromParentOrCurrentView = valueFromParentViewBindingContext || valueFromView;
+            let valueFromParentOrCurrentViewIsViable = valueFromParentOrCurrentView !== undefined;
+            let valueFromOriginalBindingContextIsEmptyObject = (typeof valueFromOriginalBindingContext === 'object') && !Object.keys(valueFromOriginalBindingContext).length;
 
-            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromParentViewBindingContext || valueFromParentComponentBindingContext || valueFromView;
+            xmlParamsToApply[paramName] = valueFromOriginalBindingContextIsEmptyObject && valueFromParentOrCurrentViewIsViable ? valueFromParentOrCurrentView // Ignore the empty object from the current context.
+                                                                                                                               : valueFromOriginalBindingContext || valueFromParentOrCurrentView;
         }
 
         this._setNewBindingContextIfNeeded();

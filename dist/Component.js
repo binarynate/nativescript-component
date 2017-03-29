@@ -320,8 +320,6 @@ var Component = function () {
                         // i.e. this.bindingContext[paramName]
                     valueFromParentViewBindingContext = void 0,
                         // i.e. this.view.bindingContext[paramName]
-                    valueFromParentComponentBindingContext = void 0,
-                        // i.e. this.view.parent.parent...(getting to parent component)...parent.bindingContext[paramName]
                     valueFromView = this.view[_paramName];
 
                     try {
@@ -335,11 +333,12 @@ var Component = function () {
                         valueFromParentViewBindingContext = (0, _componentUtils.getBindingContextProperty)(parentBindingContext, _paramName);
                     } catch (error) {}
 
-                    try {
-                        valueFromParentComponentBindingContext = this._getParentComponent().get(_paramName);
-                    } catch (error) {}
+                    var valueFromParentOrCurrentView = valueFromParentViewBindingContext || valueFromView;
+                    var valueFromParentOrCurrentViewIsViable = valueFromParentOrCurrentView !== undefined;
+                    var valueFromOriginalBindingContextIsEmptyObject = (typeof valueFromOriginalBindingContext === 'undefined' ? 'undefined' : _typeof(valueFromOriginalBindingContext)) === 'object' && !Object.keys(valueFromOriginalBindingContext).length;
 
-                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContext || valueFromParentViewBindingContext || valueFromParentComponentBindingContext || valueFromView;
+                    xmlParamsToApply[_paramName] = valueFromOriginalBindingContextIsEmptyObject && valueFromParentOrCurrentViewIsViable ? valueFromParentOrCurrentView // Ignore the empty object from the current context.
+                    : valueFromOriginalBindingContext || valueFromParentOrCurrentView;
                 }
             } catch (err) {
                 _didIteratorError = true;
