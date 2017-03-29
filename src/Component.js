@@ -286,6 +286,54 @@ class Component {
         componentManager.export(moduleExports);
     }
 
+    _assignXmlAttributesToBindingContext() {
+
+        // First, get the names of all the properties passed as XML attributes in the template.f
+        let paramNames = this._getNamesOfPropertiesPassedAsXmlAttributes();
+
+        let xmlParamsToApply = {};
+
+        // NativeScript sets properties on the view for every parameter passed as an XML attribute,
+        // however the parameters that are expressions (e.g. "{{ myBoundVariable }}") are empty objects
+        // on the view and are actually set on the original bindingContext (i.e. the parent's bindingContext).
+        // To handle that, for each of the properties passed as XML attributes, we first try to get the
+        // value from the original bindingContext and if it's not there, fall back to the value from the view object.
+        for (let paramName of paramNames) {
+
+            let valueFromOriginalBindingContext,        // i.e. this.bindingContext[paramName]
+                valueFromParentViewBindingContext,      // i.e. this.view.bindingContext[paramName]
+                valueFromParentComponentBindingContext, // i.e. this.view.parent.parent...(getting to parent component)...parent.bindingContext[paramName]
+                valueFromView = this.view[paramName];
+
+            try {
+                // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
+                valueFromOriginalBindingContext = this.get(paramName);
+            } catch(error) {}
+
+            try {
+                // In a try / catch block, because the parent view's bindingContext could be undefined.
+                let parentBindingContext = this.view._parent.bindingContext;
+                valueFromParentViewBindingContext = getBindingContextProperty(parentBindingContext, paramName);
+            } catch (error) {}
+
+            try {
+                valueFromParentComponentBindingContext = this._getParentComponent().get(paramName);
+            } catch (error) {}
+
+            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromParentViewBindingContext || valueFromParentComponentBindingContext || valueFromView;
+        }
+
+        this._setNewBindingContextIfNeeded();
+
+        // Set all of the properties passed as XML attributes on the bindingContext, because a new bindingContext
+        // was probably applied, and even if the original bindingContext is still used, it won't contain the
+        // parameters that weren't expressions (e.g. myStaticValue="foo" as opposed to myDynamicValue="{{ myBoundVariable }}") .
+        for (let paramName in xmlParamsToApply) {
+            let value = xmlParamsToApply[paramName];
+            this.set(paramName, value);
+        }
+    }
+
     /**
     * When parameters are passed to a component as XML attributes, they provided as
     * properties on the container. This method picks out such properties by comparing
@@ -345,52 +393,10 @@ class Component {
     _internalInit(options) {
 
         this._view = options.object;
-
-        // First, get the names of all the properties passed as XML attributes in the template.f
-        let paramNames = this._getNamesOfPropertiesPassedAsXmlAttributes();
-
-        let xmlParamsToApply = {};
-
-        // NativeScript sets properties on the view for every parameter passed as an XML attribute,
-        // however the parameters that are expressions (e.g. "{{ myBoundVariable }}") are empty objects
-        // on the view and are actually set on the original bindingContext (i.e. the parent's bindingContext).
-        // To handle that, for each of the properties passed as XML attributes, we first try to get the
-        // value from the original bindingContext and if it's not there, fall back to the value from the view object.
-        for (let paramName of paramNames) {
-
-            let valueFromOriginalBindingContext,        // i.e. this.bindingContext[paramName]
-                valueFromParentViewBindingContext,      // i.e. this.view.bindingContext[paramName]
-                valueFromParentComponentBindingContext, // i.e. this.view.parent.parent...(getting to parent component)...parent.bindingContext[paramName]
-                valueFromView = this.view[paramName];
-
-            try {
-                // In a try / catch block, because the view's bindingContext could be undefined before _setNewBindingContextIfNeeded() is invoked.
-                valueFromOriginalBindingContext = this.get(paramName);
-            } catch(error) {}
-
-            try {
-                // In a try / catch block, because the parent view's bindingContext could be undefined.
-                let parentBindingContext = this.view._parent.bindingContext;
-                valueFromParentViewBindingContext = getBindingContextProperty(parentBindingContext, paramName);
-            } catch (error) {}
-
-            try {
-                valueFromParentComponentBindingContext = this._getParentComponent().get(paramName);
-            } catch (error) {}
-
-            xmlParamsToApply[paramName] = valueFromOriginalBindingContext || valueFromParentViewBindingContext || valueFromParentComponentBindingContext || valueFromView;
-        }
-
-        this._setNewBindingContextIfNeeded();
-
-        // Set all of the properties passed as XML attributes on the bindingContext, because a new bindingContext
-        // was probably applied, and even if the original bindingContext is still used, it won't contain the
-        // parameters that weren't expressions (e.g. myStaticValue="foo" as opposed to myDynamicValue="{{ myBoundVariable }}") .
-        for (let paramName in xmlParamsToApply) {
-            let value = xmlParamsToApply[paramName];
-            this.set(paramName, value);
-        }
-
+        // This first attempt to assign XML attributes won't successfully assign any dynamic parameters passed from a parent component
+        // since the parent isn't initialized yet, but it's called here to make static XML attributes accessible if a user overloads
+        // `onLoaded`, `onShownModally`, etc. This method will be called again before `init()` is invoked in order to capture the dynamic attributes.
+        this._assignXmlAttributesToBindingContext();
         this._setNavigationContextProperties(this.view.navigationContext);
         this._hookUpPageLoadedEvent();
     }
@@ -402,6 +408,8 @@ class Component {
     */
     _callPublicInitHook() {
 
+        // Assign the XML attributes again now that dynamic parameters from the parent component are available.
+        this._assignXmlAttributesToBindingContext();
         // `_wasCalled` is used by child components to determine when their hooks can be called.
         this.init._wasCalled = true;
         // `_returnValue` is used by child components so that if this component's hook returns a Promise,
