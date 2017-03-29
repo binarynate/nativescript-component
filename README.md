@@ -8,7 +8,7 @@ A simple way to create reusable NativeScript components *without* Angular.
 * __Multiple instances__ of a single component can be used in a page.
 * Each component instance is automatically given its own __separate state__.
 * __Automatically binds__ XML attributes to the component's binding context.
-* Parent components are initialized before their children, so parents can safely pass values and dependencies to their children.
+* Parent components can safely __pass dependencies to their children__, because outer components are initialized before nested ones.
 * Automatically binds context properties passed to the component view `navigate()` and `showModal()`.
 * A component instance is __automatically disposed__ upon its view's `unloaded` event by default.
 * A component can instead be defined as a __singleton__ so that a single instance is kept throughout the application's lifetime.
@@ -71,7 +71,7 @@ The `details-page` component's template consists of an `ActionBar` with a single
 
 #### Things of note:
 
-* The `navigatingTo="onNavigatingTo"` attribute hooks up the component's built-in `onNavigatingTo()` initialization hook.
+* The `navigatingTo="onNavigatingTo"` attribute hooks up the component's built-in `onNavigatingTo()` hook, which instantiates the component when the view loads.
 
 * The `xmlns:e="components/editable-text"` attribute defines a namespace "e" for our component so that it can be referenced in the XML as `<e:editable-text/>`.
 
@@ -105,7 +105,6 @@ class DetailsPage extends Component {
     * @override
     */
     init() {
-
         this.set('controls', new Observable({ edit: false }));
     }
 
@@ -132,13 +131,11 @@ DetailsPage.export(exports);
 
 #### Things of note:
 
-* The Component class has built-in initialization hooks (e.g. `onLoaded`, `onNavigatingFrom`, `onShownModally`, etc.), which implement its functionality. **At least one of these hooks must be connected to the template in order to setup the component.** Feel free to also extend these hooks, as was done with the `onNavigatingTo` hook here, but be sure to call the base class's implementation first.
+* The built-in `init` hook is automatically called after the component's parent (if any) has been initialized. Override this hook to perform any setup using the [built-in methods and properties](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md). `this.get()` and `this.set()` are used to get and set properties on the component's binding context. Properties set this way can be displayed in the component's template.
 
-* Once one of the `Component` class's initialization hooks is executed (e.g. `onNavigatingTo`), you can use its [built-in methods and properties](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md) in your code. In `details-page`, `this.get()` and `this.set()` are used to get and set properties on the component's binding context. Properties set this way can be displayed in the component's template.
+* Parameters passed to `navigate()` are automatically bound to the component's binding context, which means the `user` parameter in our example is accessible in JavaScript via `this.get('user')` and available in the XML template as `{{ user }}`.
 
-* The Component class's `onNavigatingTo` hook automatically took the `user` object that was passed to `navigate()` and bound it to the component's binding context, which means it's available in the JavaScript via `this.get('user')` and available to the XML template as `{{ user }}`.
-
-* Call the `export()` method to export the class in the format that the NativeScript runtime expects. It also sets up the code that allows multiple instances of the component to coexist.
+* `export()` is used to export the class in the format that the NativeScript runtime expects.
 
 ### editable-text.xml
 
@@ -167,7 +164,6 @@ class EditableText extends Component {
     * @override
     */
     init() {
-
         // Set up the two-way binding for the data record's specified property.
         // This must be done in JavaScript, because NativeScript's XML binding expressions don't currently support dynamic
         // property names.
@@ -195,11 +191,11 @@ EditableText.export(exports);
 
 #### Things of note:
 
-* The `Component` class's initialization hooks (e.g. `onLoaded`) automatically detect parameters passed as XML attributes and sets them as properties on the component's binding context, so our parameters in this example are accessible using `this.get()`.
+* Parameters passed as XML attributes are automatically set on the component's binding context and are accessible using `this.get()`.
 
-* This file shows how the component's view is accessible as `this.view`.
+* The component's view is accessible as `this.view`.
 
-* Normally it's not necessary to set up bindings manually as shown here in `onLoaded`, but it's needed in this case in order to allow the `fieldName` property to dynamically specify the name of the property we're interested in.
+* Normally it's not necessary to set up bindings manually as shown here in `init`, but it's needed in this case in order to allow the `fieldName` property to dynamically specify the name of the property we're interested in.
 
 **For more information, check out the [API docs](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md).**
 
