@@ -19,11 +19,17 @@ A simple way to create reusable NativeScript components *without* Angular.
 npm install nativescript-component --save
 ```
 
-## Example
+## Examples
+
+### Example 1: sample-groceries app
+
+[This example](https://github.com/BinaryNate/sample-Groceries/tree/nativescript-component-demo) takes the canonical sample-groceries app from [NativeScript's getting started guide](http://docs.nativescript.org/tutorial/chapter-0) and updates it to use ES 6 and nativescript-component for a component-based design. For reference, you can compare it to the [original version](https://github.com/BinaryNate/sample-Groceries/tree/end).
+
+### Example 2: Nested components
 
 In this example, we'll create a parent component named `details-page` which uses multiple instances of another component named `editable-text` to allow a user data record to viewed and edited.
 
-### Directory structure
+#### Directory structure
 
 ```
 app
@@ -43,7 +49,7 @@ app
 
 Styles are omitted from this example for simplicity, but it's good practice to group the component's styles in its directory (e.g. `details-page/details-page.css` and `editable-text/editable-text.css`). Check out the Nativescript [LESS](https://www.npmjs.com/package/nativescript-dev-less) and [SASS](https://www.npmjs.com/package/nativescript-dev-sass) precompiler plugins for clean styling.
 
-### details-page.xml
+#### details-page.xml
 
 The `details-page` component's template consists of an `ActionBar` with a single control: a button that for toggling the UI from "view" mode to "edit" mode and vice versa; and a `GridLayout` listing our fields: first name and last name.
 
@@ -69,7 +75,7 @@ The `details-page` component's template consists of an `ActionBar` with a single
 </Page>
 ```
 
-#### Things of note:
+##### Things of note:
 
 * The `navigatingTo="onNavigatingTo"` attribute hooks up the component's built-in `onNavigatingTo()` hook, which instantiates the component when the view loads.
 
@@ -77,7 +83,7 @@ The `details-page` component's template consists of an `ActionBar` with a single
 
 * In the attribute `visibility="{{ controls.edit, controls.edit ? 'collapsed' : 'visible' }}"`, `controls.edit` is passed as the first argument to `{{ }}` in order to instruct NativeScript that the nested `edit` property is the source that should be observed for the expression following it, rather than the `controls` object in which it's contained. This requirement is documented in [NativeScript's Data Binding documentation](https://docs.nativescript.org/core-concepts/data-binding#using-expressions-for-bindings).
 
-### details-page.js
+#### details-page.js
 
 For this example, let's assume that another page navigates to our `details-page` component by invoking `navigate()` like so:
 
@@ -129,7 +135,7 @@ class DetailsPage extends Component {
 DetailsPage.export(exports);
 ```
 
-#### Things of note:
+##### Things of note:
 
 * The built-in `init` hook is automatically called after the component's parent (if any) has been initialized. Override this hook to perform any setup using the [built-in methods and properties](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md). `this.get()` and `this.set()` are used to get and set properties on the component's binding context. Properties set this way can be displayed in the component's template.
 
@@ -137,7 +143,7 @@ DetailsPage.export(exports);
 
 * `export()` is used to export the class in the format that the NativeScript runtime expects.
 
-### editable-text.xml
+#### editable-text.xml
 
 The `editable-text` component can be switched from "view" mode to "edit" mode and vice versa by its parent component (`details-page`), so its template has a read-only `<Label/>` that is shown in "view" mode and an editable `<TextField/>` that is shown in "edit" mode.
 
@@ -148,7 +154,7 @@ The `editable-text` component can be switched from "view" mode to "edit" mode an
 </StackLayout>
 ```
 
-### editable-text.js
+#### editable-text.js
 
 The `editable-text` component accepts three parameters from its parent component:
 * `record` - A data record object that contains a property that we want to view and edit
@@ -189,7 +195,7 @@ class EditableText extends Component {
 EditableText.export(exports);
 ```
 
-#### Things of note:
+##### Things of note:
 
 * Parameters passed as XML attributes are automatically set on the component's binding context and are accessible using `this.get()`.
 
@@ -198,6 +204,15 @@ EditableText.export(exports);
 * Normally it's not necessary to set up bindings manually as shown here in `init`, but it's needed in this case in order to allow the `fieldName` property to dynamically specify the name of the property we're interested in.
 
 **For more information, check out the [API docs](https://github.com/BinaryNate/nativescript-component/blob/master/docs/api.md).**
+
+### Caveats
+
+#### Embedding a component inside a `ListView.itemTemplate` or `Repeater.itemTemplate`
+
+* nativescript-component serves this scenario well, because it allows each list item to have its own separate state.
+* However, as noted in the [sample-groceries app](https://github.com/BinaryNate/sample-Groceries/blob/nativescript-component-demo/app/components/list/list.xml#L13), you must be aware that in this scenario, the list item is automatically set as the component's binding context and, most importantly, **is immutable**.
+* This means that within your list item component, you can't use `this.set('foo', foo)` to set a new property on its binding context in order to display the property in the template; you must instead set that property before the object is passed to in an array to the `ListView` `items` attribute.
+* You can still use `this.foo = foo` to set instance properties on the component, but they won't be available to the component's template.
 
 ## Contributing
 
