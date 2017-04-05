@@ -28,7 +28,9 @@
     "jshint": "^2.9.4"
   },
   "dependencies": {
-    "parameter-validator": "^1.0.0",
-    "tns-core-modules": "2.4.0"
+    "parameter-validator": "^1.0.0"
+  },
+  "peerDependencies": {
+    "tns-core-modules": "^2.4.0"
   }
 }
